@@ -58,8 +58,7 @@ import { Subscriber } from '../Subscriber';
  * - `source`: the source Observable instance itself.
  * @return {Observable} An Observable of one number that represents the count as
  * described above.
- * @method count
- * @owner Observable
+ * @name count
  */
 
 export function count<T>(predicate?: (value: T, index: number, source: Observable<T>) => boolean): OperatorFunction<T, number> {
@@ -67,8 +66,8 @@ export function count<T>(predicate?: (value: T, index: number, source: Observabl
 }
 
 class CountOperator<T> implements Operator<T, number> {
-  constructor(private predicate?: (value: T, index: number, source: Observable<T>) => boolean,
-              private source?: Observable<T>) {
+  constructor(private predicate: ((value: T, index: number, source: Observable<T>) => boolean) | undefined,
+              private source: Observable<T>) {
   }
 
   call(subscriber: Subscriber<number>, source: any): any {
@@ -86,8 +85,8 @@ class CountSubscriber<T> extends Subscriber<T> {
   private index: number = 0;
 
   constructor(destination: Observer<number>,
-              private predicate?: (value: T, index: number, source: Observable<T>) => boolean,
-              private source?: Observable<T>) {
+              private predicate: ((value: T, index: number, source: Observable<T>) => boolean) | undefined,
+              private source: Observable<T>) {
     super(destination);
   }
 
@@ -103,7 +102,7 @@ class CountSubscriber<T> extends Subscriber<T> {
     let result: any;
 
     try {
-      result = this.predicate(value, this.index++, this.source);
+      result = this.predicate!(value, this.index++, this.source);
     } catch (err) {
       this.destination.error(err);
       return;

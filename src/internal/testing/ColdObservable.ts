@@ -15,7 +15,9 @@ import { Subscriber } from '../Subscriber';
 export class ColdObservable<T> extends Observable<T> implements SubscriptionLoggable {
   public subscriptions: SubscriptionLog[] = [];
   scheduler: Scheduler;
+  // @ts-ignore: Property has no initializer and is not definitely assigned
   logSubscribedFrame: () => number;
+  // @ts-ignore: Property has no initializer and is not definitely assigned
   logUnsubscribedFrame: (index: number) => void;
 
   constructor(public messages: TestMessage[],
@@ -38,9 +40,14 @@ export class ColdObservable<T> extends Observable<T> implements SubscriptionLogg
     for (let i = 0; i < messagesLength; i++) {
       const message = this.messages[i];
       subscriber.add(
-        this.scheduler.schedule(({ message, subscriber }) => { message.notification.observe(subscriber); },
+        this.scheduler.schedule(
+          state => {
+            const { message, subscriber } = state!;
+            message.notification.observe(subscriber);
+          },
           message.frame,
-          { message, subscriber })
+          { message, subscriber }
+        )
       );
     }
   }

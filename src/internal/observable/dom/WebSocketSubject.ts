@@ -41,7 +41,7 @@ import { Observer, NextObserver } from '../../types';
  * // This is a msg from the server
  * ```
  *
- * **serializer** allows us tom apply custom serialization strategy but for the outgoing messages
+ * **serializer** allows us to apply custom serialization strategy but for the outgoing messages
  * ```ts
  * import { webSocket } from 'rxjs/webSocket';
  *
@@ -53,8 +53,10 @@ import { Observer, NextObserver } from '../../types';
  *
  * wsSubject.subscribe(() => subject.next("msg to the server"));
  *
- * // Let's suppose we have this on the Server: ws.send("This is a msg from the server")
- * //output
+ * // Let's suppose we have this on the Server:
+ * //   ws.on("message", msg => console.log);
+ * //   ws.send("This is a msg from the server");
+ * //output at server side:
  * //
  * // {"channel":"webDevelopment","msg":"msg to the server"}
  * ```
@@ -150,12 +152,14 @@ export type WebSocketMessage = string | ArrayBuffer | Blob | ArrayBufferView;
 
 export class WebSocketSubject<T> extends AnonymousSubject<T> {
 
+  // @ts-ignore: Property has no initializer and is not definitely assigned
   private _config: WebSocketSubjectConfig<T>;
 
   /** @deprecated This is an internal implementation detail, do not use. */
+  // @ts-ignore: Property has no initializer and is not definitely assigned
   _output: Subject<T>;
 
-  private _socket: WebSocket;
+  private _socket: WebSocket | null = null;
 
   constructor(urlConfigOrSource: string | WebSocketSubjectConfig<T> | Observable<T>, destination?: Observer<T>) {
     super();
@@ -170,7 +174,7 @@ export class WebSocketSubject<T> extends AnonymousSubject<T> {
       } else {
         for (let key in urlConfigOrSource) {
           if (urlConfigOrSource.hasOwnProperty(key)) {
-            config[key] = urlConfigOrSource[key];
+            (config as any)[key] = (urlConfigOrSource as any)[key];
           }
         }
       }
@@ -253,11 +257,11 @@ export class WebSocketSubject<T> extends AnonymousSubject<T> {
     const { WebSocketCtor, protocol, url, binaryType } = this._config;
     const observer = this._output;
 
-    let socket: WebSocket = null;
+    let socket: WebSocket | null = null;
     try {
       socket = protocol ?
-        new WebSocketCtor(url, protocol) :
-        new WebSocketCtor(url);
+        new WebSocketCtor!(url, protocol) :
+        new WebSocketCtor!(url);
       this._socket = socket;
       if (binaryType) {
         this._socket.binaryType = binaryType;
@@ -277,7 +281,7 @@ export class WebSocketSubject<T> extends AnonymousSubject<T> {
     socket.onopen = (e: Event) => {
       const { _socket } = this;
       if (!_socket) {
-        socket.close();
+        socket!.close();
         this._resetState();
         return;
       }
@@ -290,12 +294,12 @@ export class WebSocketSubject<T> extends AnonymousSubject<T> {
 
       this.destination = Subscriber.create<T>(
         (x) => {
-          if (socket.readyState === 1) {
+          if (socket!.readyState === 1) {
             try {
               const { serializer } = this._config;
-              socket.send(serializer(x));
+              socket!.send(serializer!(x!));
               } catch (e) {
-              this.destination.error(e);
+              this.destination!.error(e);
             }
           }
         },
@@ -305,7 +309,7 @@ export class WebSocketSubject<T> extends AnonymousSubject<T> {
             closingObserver.next(undefined);
           }
           if (e && e.code) {
-            socket.close(e.code, e.reason);
+            socket!.close(e.code, e.reason);
           } else {
             observer.error(new TypeError(WEBSOCKETSUBJECT_INVALID_ERROR_OBJECT));
           }
@@ -316,7 +320,7 @@ export class WebSocketSubject<T> extends AnonymousSubject<T> {
           if (closingObserver) {
             closingObserver.next(undefined);
           }
-          socket.close();
+          socket!.close();
           this._resetState();
         }
       ) as Subscriber<any>;
@@ -347,7 +351,7 @@ export class WebSocketSubject<T> extends AnonymousSubject<T> {
     socket.onmessage = (e: MessageEvent) => {
       try {
         const { deserializer } = this._config;
-        observer.next(deserializer(e));
+        observer.next(deserializer!(e));
       } catch (err) {
         observer.error(err);
       }

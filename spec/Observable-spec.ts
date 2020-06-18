@@ -5,7 +5,7 @@ import { cold, expectObservable, expectSubscriptions } from './helpers/marble-te
 import { Observable, config, Subscription, noop, Subscriber, Operator, NEVER, Subject, of, throwError, empty } from 'rxjs';
 import { map, multicast, refCount, filter, count, tap, combineLatest, concat, merge, race, zip } from 'rxjs/operators';
 
-declare const asDiagram: any, rxTestScheduler: any;
+declare const rxTestScheduler: any;
 
 function expectFullObserver(val: any) {
   expect(val).to.be.a('object');
@@ -36,7 +36,7 @@ describe('Observable', () => {
   });
 
   it('should send errors thrown in the constructor down the error path', (done) => {
-    new Observable<number>((observer) => {
+    new Observable<number>(() => {
       throw new Error('this should be handled');
     })
       .subscribe({
@@ -68,7 +68,7 @@ describe('Observable', () => {
     });
 
     it('should reject promise when in error', (done) => {
-      throwError('bad').forEach((x) => {
+      throwError('bad').forEach(() => {
         done(new Error('should not be called'));
       }, Promise).then(() => {
         done(new Error('should not complete'));
@@ -250,7 +250,7 @@ describe('Observable', () => {
     });
 
     it('should run unsubscription logic when an error is sent asynchronously and subscribe is called with no arguments', (done) => {
-      const sandbox = sinon.sandbox.create();
+      const sandbox = sinon.createSandbox();
       const fakeTimer = sandbox.useFakeTimers();
 
       let unsubscribeCalled = false;
@@ -265,7 +265,7 @@ describe('Observable', () => {
       });
 
       source.subscribe({
-        error(err) {
+        error() {
           /* noop: expected error */
         }
       });
@@ -632,13 +632,6 @@ describe('Observable', () => {
 
 /** @test {Observable} */
 describe('Observable.create', () => {
-  asDiagram('create(obs => { obs.next(1); })')
-    ('should create a cold observable that emits just 1', () => {
-      const e1 = Observable.create((obs: Observer<number>) => { obs.next(1); });
-      const expected = 'x';
-      expectObservable(e1).toBe(expected, { x: 1 });
-    });
-
   it('should create an Observable', () => {
     const result = Observable.create(() => {
       //noop
@@ -662,7 +655,7 @@ describe('Observable.create', () => {
   });
 
   it('should send errors thrown in the passed function down the error path', (done) => {
-    Observable.create((observer: Observer<any>) => {
+    Observable.create(() => {
       throw new Error('this should be handled');
     })
       .subscribe({
@@ -726,7 +719,7 @@ describe('Observable.lift', () => {
     result.subscribe(
       function (x) {
         expect(x).to.equal(expected.shift());
-      }, (x) => {
+      }, () => {
         done(new Error('should not be called'));
       }, () => {
         done();
@@ -752,7 +745,7 @@ describe('Observable.lift', () => {
     result.subscribe(
       function (x) {
         expect(x).to.equal(expected.shift());
-      }, (x) => {
+      }, () => {
         done(new Error('should not be called'));
       }, () => {
         done();
@@ -776,7 +769,7 @@ describe('Observable.lift', () => {
     result.subscribe(
       function (x) {
         expect(x).to.equal(expected.shift());
-      }, (x) => {
+      }, () => {
         done(new Error('should not be called'));
       }, () => {
         done();
@@ -871,7 +864,7 @@ describe('Observable.lift', () => {
         next(value?: T): void {
           log.push('next ' + value);
           if (!this.isStopped) {
-            this._next(value);
+            this._next(value!);
           }
         }
       }
@@ -916,7 +909,7 @@ describe('Observable.lift', () => {
         function (x) {
           expect(x).to.equal(expected.shift());
         },
-        (x) => {
+        () => {
           done(new Error('should not be called'));
         }, () => {
           expect(log).to.deep.equal([

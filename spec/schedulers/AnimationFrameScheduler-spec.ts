@@ -12,7 +12,7 @@ describe('Scheduler.animationFrame', () => {
 
   it('should act like the async scheduler if delay > 0', () => {
     let actionHappened = false;
-    const sandbox = sinon.sandbox.create();
+    const sandbox = sinon.createSandbox();
     const fakeTimer = sandbox.useFakeTimers();
     animationFrame.schedule(() => {
       actionHappened = true;
@@ -27,7 +27,7 @@ describe('Scheduler.animationFrame', () => {
 
   it('should cancel animationFrame actions when unsubscribed', () => {
     let actionHappened = false;
-    const sandbox = sinon.sandbox.create();
+    const sandbox = sinon.createSandbox();
     const fakeTimer = sandbox.useFakeTimers();
     animationFrame.schedule(() => {
       actionHappened = true;
@@ -114,5 +114,33 @@ describe('Scheduler.animationFrame', () => {
     } else {
       firstSubscription.unsubscribe();
     }
+  });
+
+  it('should not execute rescheduled actions when flushing', (done: MochaDone) => {
+    let flushCount = 0;
+    let scheduledIndices: number[] = [];
+
+    let originalFlush = animationFrame.flush;
+    animationFrame.flush = (...args) => {
+      ++flushCount;
+      originalFlush.apply(animationFrame, args);
+      if (flushCount === 2) {
+        animationFrame.flush = originalFlush;
+        try {
+          expect(scheduledIndices).to.deep.equal([0, 1]);
+          done();
+        } catch (error) {
+          done(error);
+        }
+      }
+    };
+
+    animationFrame.schedule(function (index) {
+      if (flushCount < 2) {
+        this.schedule(index! + 1);
+        scheduledIndices.push(index! + 1);
+      }
+    }, 0, 0);
+    scheduledIndices.push(0);
   });
 });

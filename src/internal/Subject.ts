@@ -22,8 +22,6 @@ export class SubjectSubscriber<T> extends Subscriber<T> {
  *
  * Every Subject is an Observable and an Observer. You can subscribe to a
  * Subject, and you can call next to feed values as well as error and complete.
- *
- * @class Subject<T>
  */
 export class Subject<T> extends Observable<T> implements SubscriptionLike {
 
@@ -41,15 +39,19 @@ export class Subject<T> extends Observable<T> implements SubscriptionLike {
 
   thrownError: any = null;
 
-  constructor() {
-    super();
-  }
-
-  /**@nocollapse
-   * @deprecated use new Subject() instead
-  */
+  /**
+   * Creates a "subject" by basically gluing an observer to an observable.
+   *
+   * @nocollapse
+   * @deprecated Recommended you do not use, will be removed at some point in the future. Plans for replacement still under discussion.
+   */
   static create: Function = <T>(destination: Observer<T>, source: Observable<T>): AnonymousSubject<T> => {
     return new AnonymousSubject<T>(destination, source);
+  }
+
+  constructor() {
+    // NOTE: This must be here to obscure Observable's constructor.
+    super();
   }
 
   lift<R>(operator: Operator<T, R>): Observable<R> {
@@ -58,7 +60,7 @@ export class Subject<T> extends Observable<T> implements SubscriptionLike {
     return <any>subject;
   }
 
-  next(value?: T) {
+  next(value: T) {
     if (this.closed) {
       throw new ObjectUnsubscribedError();
     }
@@ -67,7 +69,7 @@ export class Subject<T> extends Observable<T> implements SubscriptionLike {
       const len = observers.length;
       const copy = observers.slice();
       for (let i = 0; i < len; i++) {
-        copy[i].next(value);
+        copy[i].next(value!);
       }
     }
   }
@@ -105,7 +107,7 @@ export class Subject<T> extends Observable<T> implements SubscriptionLike {
   unsubscribe() {
     this.isStopped = true;
     this.closed = true;
-    this.observers = null;
+    this.observers = null!;
   }
 
   /** @deprecated This is an internal implementation detail, do not use. */
@@ -165,14 +167,14 @@ export class AnonymousSubject<T> extends Subject<T> {
   error(err: any) {
     const { destination } = this;
     if (destination && destination.error) {
-      this.destination.error(err);
+      this.destination!.error(err);
     }
   }
 
   complete() {
     const { destination } = this;
     if (destination && destination.complete) {
-      this.destination.complete();
+      this.destination!.complete();
     }
   }
 
@@ -180,7 +182,7 @@ export class AnonymousSubject<T> extends Subject<T> {
   _subscribe(subscriber: Subscriber<T>): Subscription {
     const { source } = this;
     if (source) {
-      return this.source.subscribe(subscriber);
+      return this.source!.subscribe(subscriber);
     } else {
       return Subscription.EMPTY;
     }

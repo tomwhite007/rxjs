@@ -3,11 +3,9 @@ import { hot, cold, expectObservable, expectSubscriptions } from '../helpers/mar
 import { skipWhile, mergeMap, tap } from 'rxjs/operators';
 import { of } from 'rxjs';
 
-declare function asDiagram(arg: string): Function;
-
 /** @test {skipWhile} */
 describe('skipWhile operator', () => {
-  asDiagram('skipWhile(x => x < 4)')('should skip all elements until predicate is false', () => {
+  it('should skip all elements until predicate is false', () => {
     const source = hot('-1-^2--3--4--5--6--|');
     const sourceSubs =    '^               !';
     const expected =      '-------4--5--6--|';
@@ -52,7 +50,7 @@ describe('skipWhile operator', () => {
     const sourceSubs =    '^               !';
     const expected =      '-2--3--4--5--6--|';
 
-    expectObservable(source.pipe(skipWhile(() => undefined))).toBe(expected);
+    expectObservable(source.pipe(skipWhile(() => undefined as any))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 

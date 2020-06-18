@@ -1,6 +1,19 @@
 {
-  "extends": "./tsconfig.base.json",
   "compilerOptions": {
+    "incremental": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "strict": true,
+    "noImplicitReturns": true,
+    "moduleResolution": "node",
+    "stripInternal": false,
+    "noEmit": true,
+    "lib": [
+      "esnext",
+      "dom"
+    ],
+    "target": "esnext",
     "baseUrl": ".",
     "paths": {
       "rxjs": ["./src/index"],
@@ -12,5 +25,7 @@
       "rxjs/internal/*": ["./src/internal/*"]
     }
   },
-  "exclude": ["./dist"]
+  "bazelOptions": {
+    "suppressTsconfigOverrideWarnings": true
+  }
 }

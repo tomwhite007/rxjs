@@ -4,8 +4,6 @@ import { isFunction } from '../util/isFunction';
 import { Subscriber } from '../Subscriber';
 import { map } from '../operators/map';
 
-const toString: Function = (() => Object.prototype.toString)();
-
 export interface NodeStyleEventEmitter {
   addListener: (eventName: string | symbol, handler: NodeEventHandler) => this;
   removeListener: (eventName: string | symbol, handler: NodeEventHandler) => this;
@@ -49,8 +47,8 @@ export interface AddEventListenerOptions extends EventListenerOptions {
 /* tslint:disable:max-line-length */
 export function fromEvent<T>(target: FromEventTarget<T>, eventName: string): Observable<T>;
 /** @deprecated resultSelector no longer supported, pipe to map instead */
-export function fromEvent<T>(target: FromEventTarget<T>, eventName: string, resultSelector: (...args: any[]) => T): Observable<T>;
-export function fromEvent<T>(target: FromEventTarget<T>, eventName: string, options: EventListenerOptions): Observable<T>;
+export function fromEvent<T>(target: FromEventTarget<T>, eventName: string, resultSelector?: (...args: any[]) => T): Observable<T>;
+export function fromEvent<T>(target: FromEventTarget<T>, eventName: string, options?: EventListenerOptions): Observable<T>;
 /** @deprecated resultSelector no longer supported, pipe to map instead */
 export function fromEvent<T>(target: FromEventTarget<T>, eventName: string, options: EventListenerOptions, resultSelector: (...args: any[]) => T): Observable<T>;
 /* tslint:enable:max-line-length */
@@ -188,15 +186,15 @@ export function fromEvent<T>(
   }
   if (resultSelector) {
     // DEPRECATED PATH
-    return fromEvent<T>(target, eventName, <EventListenerOptions | undefined>options).pipe(
-      map(args => isArray(args) ? resultSelector(...args) : resultSelector(args))
+    return fromEvent<T>(target, eventName, options as EventListenerOptions | undefined).pipe(
+      map(args => isArray(args) ? resultSelector!(...args) : resultSelector!(args))
     );
   }
 
   return new Observable<T>(subscriber => {
     function handler(e: T) {
       if (arguments.length > 1) {
-        subscriber.next(Array.prototype.slice.call(arguments));
+        subscriber.next(Array.prototype.slice.call(arguments) as any);
       } else {
         subscriber.next(e);
       }
@@ -208,7 +206,7 @@ export function fromEvent<T>(
 function setupSubscription<T>(sourceObj: FromEventTarget<T>, eventName: string,
                               handler: (...args: any[]) => void, subscriber: Subscriber<T>,
                               options?: EventListenerOptions) {
-  let unsubscribe: () => void;
+  let unsubscribe: (() => void) | undefined;
   if (isEventTarget(sourceObj)) {
     const source = sourceObj;
     sourceObj.addEventListener(eventName, handler, options);
@@ -223,7 +221,7 @@ function setupSubscription<T>(sourceObj: FromEventTarget<T>, eventName: string,
     unsubscribe = () => source.removeListener(eventName, handler as NodeEventHandler);
   } else if (sourceObj && (sourceObj as any).length) {
     for (let i = 0, len = (sourceObj as any).length; i < len; i++) {
-      setupSubscription(sourceObj[i], eventName, handler, subscriber, options);
+      setupSubscription((sourceObj as any)[i], eventName, handler, subscriber, options);
     }
   } else {
     throw new TypeError('Invalid event target');

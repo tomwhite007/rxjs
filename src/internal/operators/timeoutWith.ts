@@ -5,7 +5,7 @@ import { Observable } from '../Observable';
 import { isDate } from '../util/isDate';
 import { OuterSubscriber } from '../OuterSubscriber';
 import { subscribeToResult } from '../util/subscribeToResult';
-import { ObservableInput, OperatorFunction, MonoTypeOperatorFunction, SchedulerAction, SchedulerLike, TeardownLogic } from '../types';
+import { ObservableInput, OperatorFunction, SchedulerAction, SchedulerLike, TeardownLogic } from '../types';
 
 /* tslint:disable:max-line-length */
 export function timeoutWith<T, R>(due: number | Date, withObservable: ObservableInput<R>, scheduler?: SchedulerLike): OperatorFunction<T, T | R>;
@@ -61,8 +61,7 @@ export function timeoutWith<T, R>(due: number | Date, withObservable: Observable
  * @param {SchedulerLike} [scheduler] Scheduler controlling when timeout checks occur.
  * @return {Observable<T>} Observable that mirrors behaviour of source or, when timeout check fails, of an Observable
  *                          passed as a second parameter.
- * @method timeoutWith
- * @owner Observable
+ * @name timeoutWith
  */
 export function timeoutWith<T, R>(due: number | Date,
                                   withObservable: ObservableInput<R>,
@@ -95,7 +94,7 @@ class TimeoutWithOperator<T> implements Operator<T, T> {
  */
 class TimeoutWithSubscriber<T, R> extends OuterSubscriber<T, R> {
 
-  private action: SchedulerAction<TimeoutWithSubscriber<T, R>> = null;
+  private action: SchedulerAction<TimeoutWithSubscriber<T, R>> | null = null;
 
   constructor(destination: Subscriber<T>,
               private absoluteTimeout: boolean,
@@ -123,7 +122,7 @@ class TimeoutWithSubscriber<T, R> extends OuterSubscriber<T, R> {
       this.action = (<SchedulerAction<TimeoutWithSubscriber<T, R>>> action.schedule(this, this.waitFor));
     } else {
       this.add(this.action = (<SchedulerAction<TimeoutWithSubscriber<T, R>>> this.scheduler.schedule<TimeoutWithSubscriber<T, R>>(
-        TimeoutWithSubscriber.dispatchTimeout, this.waitFor, this
+        TimeoutWithSubscriber.dispatchTimeout as any, this.waitFor, this
       )));
     }
   }
@@ -138,7 +137,7 @@ class TimeoutWithSubscriber<T, R> extends OuterSubscriber<T, R> {
   /** @deprecated This is an internal implementation detail, do not use. */
   _unsubscribe() {
     this.action = null;
-    this.scheduler = null;
-    this.withObservable = null;
+    this.scheduler = null!;
+    this.withObservable = null!;
   }
 }

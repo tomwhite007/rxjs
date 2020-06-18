@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { hot, cold, expectObservable, expectSubscriptions } from '../helpers/marble-testing';
-import { EMPTY, NEVER, of, race as staticRace, timer, defer, Observable, throwError } from 'rxjs';
+import { EMPTY, NEVER, of, timer, defer, Observable, throwError } from 'rxjs';
 import { race, mergeMap, map, finalize, startWith } from 'rxjs/operators';
 
 /** @test {race} */
@@ -168,14 +168,14 @@ describe('race operator', () => {
     const e1 = of(true);
     const e2 = timer(200).pipe(map(_ => false));
 
-    staticRace(e1, e2).subscribe(x => {
+    e1.pipe(race(e2)).subscribe(x => {
       expect(x).to.be.true;
     }, done, done);
   });
 
   it('should ignore latter observables if a former one emits immediately', () => {
     const onNext = sinon.spy();
-    const onSubscribe = sinon.spy();
+    const onSubscribe = sinon.spy() as any;
     const e1 = of('a'); // Wins the race
     const e2 = defer(onSubscribe); // Should be ignored
 
@@ -186,7 +186,7 @@ describe('race operator', () => {
 
   it('should ignore latter observables if a former one completes immediately', () => {
     const onComplete = sinon.spy();
-    const onSubscribe = sinon.spy();
+    const onSubscribe = sinon.spy() as any;
     const e1 = EMPTY; // Wins the race
     const e2 = defer(onSubscribe); // Should be ignored
 
@@ -197,7 +197,7 @@ describe('race operator', () => {
 
   it('should ignore latter observables if a former one errors immediately', () => {
     const onError = sinon.spy();
-    const onSubscribe = sinon.spy();
+    const onSubscribe = sinon.spy() as any;
     const e1 = throwError('kaboom'); // Wins the race
     const e2 = defer(onSubscribe); // Should be ignored
 

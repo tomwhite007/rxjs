@@ -3,12 +3,11 @@ import { hot, cold, expectObservable, expectSubscriptions } from '../helpers/mar
 import { publish, zip, mergeMapTo, mergeMap, tap, refCount, retry, repeat, map } from 'rxjs/operators';
 import { ConnectableObservable, of, Subscription, Observable } from 'rxjs';
 
-declare function asDiagram(arg: string): Function;
 declare const type: Function;
 
 /** @test {publish} */
 describe('publish operator', () => {
-  asDiagram('publish')('should mirror a simple source Observable', () => {
+  it('should mirror a simple source Observable', () => {
     const source = cold('--1-2---3-4--5-|');
     const sourceSubs =  '^              !';
     const published = source.pipe(publish()) as ConnectableObservable<any>;
@@ -343,28 +342,28 @@ describe('publish operator', () => {
 
   type('should infer the type', () => {
     /* tslint:disable:no-unused-variable */
-    const source = of<number>(1, 2, 3);
+    const source = of(1, 2, 3);
     const result: ConnectableObservable<number> = source.pipe(publish()) as ConnectableObservable<number>;
     /* tslint:enable:no-unused-variable */
   });
 
   type('should infer the type with a selector', () => {
     /* tslint:disable:no-unused-variable */
-    const source = of<number>(1, 2, 3);
+    const source = of(1, 2, 3);
     const result: Observable<number> = source.pipe(publish(s => s.pipe(map(x => x))));
     /* tslint:enable:no-unused-variable */
   });
 
   type('should infer the type with a type-changing selector', () => {
     /* tslint:disable:no-unused-variable */
-    const source = of<number>(1, 2, 3);
+    const source = of(1, 2, 3);
     const result: Observable<string> = source.pipe(publish(s => s.pipe(map(x => x + '!'))));
     /* tslint:enable:no-unused-variable */
   });
 
   type('should infer the type for the pipeable operator', () => {
     /* tslint:disable:no-unused-variable */
-    const source = of<number>(1, 2, 3);
+    const source = of(1, 2, 3);
     // TODO: https://github.com/ReactiveX/rxjs/issues/2972
     const result: ConnectableObservable<number> = publish<number>()(source);
     /* tslint:enable:no-unused-variable */
@@ -372,14 +371,14 @@ describe('publish operator', () => {
 
   type('should infer the type for the pipeable operator with a selector', () => {
     /* tslint:disable:no-unused-variable */
-    const source = of<number>(1, 2, 3);
+    const source = of(1, 2, 3);
     const result: Observable<number> = source.pipe(publish(s => s.pipe(map(x => x))));
     /* tslint:enable:no-unused-variable */
   });
 
   type('should infer the type for the pipeable operator with a type-changing selector', () => {
     /* tslint:disable:no-unused-variable */
-    const source = of<number>(1, 2, 3);
+    const source = of(1, 2, 3);
     const result: Observable<string> = source.pipe(publish(s => s.pipe(map(x => x + '!'))));
     /* tslint:enable:no-unused-variable */
   });

@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { SafeSubscriber } from 'rxjs/internal/Subscriber';
-import { Subscriber } from 'rxjs';
+import { Subscriber, Observable } from 'rxjs';
+import { asInteropSubscriber } from './helpers/interop-helper';
 
 /** @test {Subscriber} */
 describe('Subscriber', () => {
@@ -84,7 +85,7 @@ describe('Subscriber', () => {
   });
 
   it('should call complete observer without any arguments', () => {
-    let argument: Array<any> = null;
+    let argument: Array<any> | null = null;
 
     const observer = {
       complete: (...args: Array<any>) => {
@@ -96,5 +97,23 @@ describe('Subscriber', () => {
     sub1.complete();
 
     expect(argument).to.have.lengthOf(0);
+  });
+
+  it('should chain interop unsubscriptions', () => {
+    let observableUnsubscribed = false;
+    let subscriberUnsubscribed = false;
+    let subscriptionUnsubscribed = false;
+
+    const subscriber = new Subscriber<void>();
+    subscriber.add(() => subscriberUnsubscribed = true);
+
+    const source = new Observable<void>(() => () => observableUnsubscribed = true);
+    const subscription = source.subscribe(asInteropSubscriber(subscriber));
+    subscription.add(() => subscriptionUnsubscribed = true);
+    subscriber.unsubscribe();
+
+    expect(observableUnsubscribed).to.be.true;
+    expect(subscriberUnsubscribed).to.be.true;
+    expect(subscriptionUnsubscribed).to.be.true;
   });
 });

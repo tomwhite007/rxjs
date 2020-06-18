@@ -6,6 +6,29 @@ import { delay } from 'rxjs/operators';
 
 /** @test {Subject} */
 describe('Subject', () => {
+
+  it('should allow next with undefined or any when created with no type', (done: MochaDone) => {
+    const subject = new Subject();
+    subject.subscribe(x => {
+      expect(x).to.be.a('undefined');
+    }, null, done);
+
+    const data: any = undefined;
+    subject.next(undefined);
+    subject.next(data);
+    subject.complete();
+  });
+
+  it('should allow empty next when created with void type', (done: MochaDone) => {
+    const subject = new Subject<void>();
+    subject.subscribe(x => {
+      expect(x).to.be.a('undefined');
+    }, null, done);
+
+    subject.next();
+    subject.complete();
+  });
+
   it('should pump values right on through itself', (done: MochaDone) => {
     const subject = new Subject<string>();
     const expected = ['foo', 'bar'];
@@ -271,7 +294,7 @@ describe('Subject', () => {
   });
 
   it('should not allow values to be nexted after it is unsubscribed', (done: MochaDone) => {
-    const subject = new Subject();
+    const subject = new Subject<string>();
     const expected = ['foo'];
 
     subject.subscribe(function (x) {
@@ -397,7 +420,7 @@ describe('Subject', () => {
 
   it('should be an Observer which can be given to Observable.subscribe', (done: MochaDone) => {
     const source = of(1, 2, 3, 4, 5);
-    const subject = new Subject();
+    const subject = new Subject<number>();
     const expected = [1, 2, 3, 4, 5];
 
     subject.subscribe(
@@ -414,7 +437,7 @@ describe('Subject', () => {
 
   it('should be usable as an Observer of a finite delayed Observable', (done: MochaDone) => {
     const source = of(1, 2, 3).pipe(delay(50));
-    const subject = new Subject();
+    const subject = new Subject<number>();
 
     const expected = [1, 2, 3];
 
@@ -431,7 +454,7 @@ describe('Subject', () => {
   });
 
   it('should throw ObjectUnsubscribedError when emit after unsubscribed', () => {
-    const subject = new Subject();
+    const subject = new Subject<string>();
     subject.unsubscribe();
 
     expect(() => {

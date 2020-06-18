@@ -1,18 +1,19 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "lib": ["es2015", "dom"],
+    "lib": ["esnext", "dom"],
     "module": "commonjs",
     "noEmit": true,
-    "noImplicitAny": true,
-    "noImplicitThis": true,
     "paths": {
-      "rxjs": ["../dist/typings"],
-      "rxjs/operators": ["../dist/typings/operators"]
+      "rxjs": ["../dist/types"],
+      "rxjs/ajax": ["../dist/types/ajax"],
+      "rxjs/fetch": ["../dist/types/fetch"],
+      "rxjs/operators": ["../dist/types/operators"],
+      "rxjs/testing": ["../dist/types/testing"],
+      "rxjs/webSocket": ["../dist/types/webSocket"]
     },
     "skipLibCheck": true,
-    "strictFunctionTypes": true,
-    "strictNullChecks": true,
-    "target": "es2015"
+    "strict": true,
+    "target": "esnext"
   }
 }

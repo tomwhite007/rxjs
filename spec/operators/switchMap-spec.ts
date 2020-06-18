@@ -2,13 +2,11 @@ import { expect } from 'chai';
 import { hot, cold, expectObservable, expectSubscriptions } from '../helpers/marble-testing';
 import { switchMap, mergeMap, map, takeWhile } from 'rxjs/operators';
 import { concat, defer, of, Observable } from 'rxjs';
-
-declare function asDiagram(arg: string): Function;
+import { asInteropObservable } from '../helpers/interop-helper';
 
 /** @test {switchMap} */
 describe('switchMap', () => {
-  asDiagram('switchMap(i => 10*i\u2014\u201410*i\u2014\u201410*i\u2014| )')
-  ('should map-and-flatten each item to an Observable', () => {
+  it('should map-and-flatten each item to an Observable', () => {
     const e1 =    hot('--1-----3--5-------|');
     const e1subs =    '^                  !';
     const e2 =   cold('x-x-x|              ', {x: 10});
@@ -103,7 +101,7 @@ describe('switchMap', () => {
     const e1subs =   '^                            !        ';
     const expected = '-----------a--b--c----f---g---h---i--|';
 
-    const observableLookup = { x: x, y: y };
+    const observableLookup: Record<string, Observable<string>> = { x: x, y: y };
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
@@ -135,7 +133,7 @@ describe('switchMap', () => {
     const unsub =    '                     !                ';
     const expected = '-----------a--b--c----                ';
 
-    const observableLookup = { x: x, y: y };
+    const observableLookup: Record<string, Observable<string>> = { x: x, y: y };
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
@@ -155,11 +153,41 @@ describe('switchMap', () => {
     const expected = '-----------a--b--c----                ';
     const unsub =    '                     !                ';
 
-    const observableLookup = { x: x, y: y };
+    const observableLookup: Record<string, Observable<string>> = { x: x, y: y };
 
     const result = e1.pipe(
       mergeMap(x => of(x)),
       switchMap(value => observableLookup[value]),
+      mergeMap(x => of(x)),
+    );
+
+    expectObservable(result, unsub).toBe(expected);
+    expectSubscriptions(x.subscriptions).toBe(xsubs);
+    expectSubscriptions(y.subscriptions).toBe(ysubs);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not break unsubscription chains with interop inners when result is unsubscribed explicitly', () => {
+    const x =   cold(         '--a--b--c--d--e--|           ');
+    const xsubs =    '         ^         !                  ';
+    const y =   cold(                   '---f---g---h---i--|');
+    const ysubs =    '                   ^ !                ';
+    const e1 =   hot('---------x---------y---------|        ');
+    const e1subs =   '^                    !                ';
+    const expected = '-----------a--b--c----                ';
+    const unsub =    '                     !                ';
+
+    const observableLookup: Record<string, Observable<string>> = { x: x, y: y };
+
+    // This test is the same as the previous test, but the observable is
+    // manipulated to make it look like an interop observable - an observable
+    // from a foreign library. Interop subscribers are treated differently:
+    // they are wrapped in a safe subscriber. This test ensures that
+    // unsubscriptions are chained all the way to the interop subscriber.
+
+    const result = e1.pipe(
+      mergeMap(x => of(x)),
+      switchMap(value => asInteropObservable(observableLookup[value])),
       mergeMap(x => of(x)),
     );
 
@@ -203,7 +231,7 @@ describe('switchMap', () => {
     const e1subs =   '^                            !       ';
     const expected = '-----------a--b--c----f---g---h---i--';
 
-    const observableLookup = { x: x, y: y };
+    const observableLookup: Record<string, Observable<string>> = { x: x, y: y };
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
@@ -222,7 +250,7 @@ describe('switchMap', () => {
     const e1subs =   '^                            !';
     const expected = '------------f---g---h---i----|';
 
-    const observableLookup = { x: x, y: y };
+    const observableLookup: Record<string, Observable<string>> = { x: x, y: y };
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
@@ -241,7 +269,7 @@ describe('switchMap', () => {
     const e1subs =   '^                !                   ';
     const expected = '-----------a--b--#                   ';
 
-    const observableLookup = { x: x, y: y };
+    const observableLookup: Record<string, Observable<string>> = { x: x, y: y };
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
@@ -260,7 +288,7 @@ describe('switchMap', () => {
     const e1subs =   '^                            !        ';
     const expected = '-----------c--d--e----f---g---h---i--|';
 
-    const observableLookup = { x: x, y: y };
+    const observableLookup: Record<string, Observable<string>> = { x: x, y: y };
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
@@ -279,7 +307,7 @@ describe('switchMap', () => {
     const e1subs =   '^                            !';
     const expected = '-----------------------------|';
 
-    const observableLookup = { x: x, y: y };
+    const observableLookup: Record<string, Observable<string>> = { x: x, y: y };
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
@@ -298,7 +326,7 @@ describe('switchMap', () => {
     const e1subs =   '^                            !';
     const expected = '------------------------------';
 
-    const observableLookup = { x: x, y: y };
+    const observableLookup: Record<string, Observable<string>> = { x: x, y: y };
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
@@ -317,7 +345,7 @@ describe('switchMap', () => {
     const e1subs =   '^                            !';
     const expected = '-----------------------------|';
 
-    const observableLookup = { x: x, y: y };
+    const observableLookup: Record<string, Observable<string>> = { x: x, y: y };
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
@@ -329,14 +357,14 @@ describe('switchMap', () => {
 
   it('should switch inner never and throw', () => {
     const x = cold('-');
-    const y = cold('#', null, 'sad');
+    const y = cold('#', undefined, 'sad');
     const xsubs =    '         ^         !          ';
     const ysubs =    '                   (^!)       ';
     const e1 =   hot('---------x---------y---------|');
     const e1subs =   '^                  !          ';
     const expected = '-------------------#          ';
 
-    const observableLookup = { x: x, y: y };
+    const observableLookup: Record<string, Observable<string>> = { x: x, y: y };
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
@@ -348,14 +376,14 @@ describe('switchMap', () => {
 
   it('should switch inner empty and throw', () => {
     const x = cold('|');
-    const y = cold('#', null, 'sad');
+    const y = cold('#', undefined, 'sad');
     const xsubs =    '         (^!)                 ';
     const ysubs =    '                   (^!)       ';
     const e1 =   hot('---------x---------y---------|');
     const e1subs =   '^                  !          ';
     const expected = '-------------------#          ';
 
-    const observableLookup = { x: x, y: y };
+    const observableLookup: Record<string, Observable<string>> = { x: x, y: y };
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
@@ -405,7 +433,7 @@ describe('switchMap', () => {
     const e1subs =   '^                  !       ';
     const expected = '-----------a--b--c-#       ';
 
-    const observableLookup = { x: x };
+    const observableLookup: Record<string, Observable<string>> = { x: x };
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 

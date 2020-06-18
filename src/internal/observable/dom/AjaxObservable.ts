@@ -10,7 +10,7 @@ export interface AjaxRequest {
   user?: string;
   async?: boolean;
   method?: string;
-  headers?: Object;
+  headers?: object;
   timeout?: number;
   password?: string;
   hasContent?: boolean;
@@ -48,7 +48,7 @@ function getXMLHttpRequest(): XMLHttpRequest {
           //suppress exceptions
         }
       }
-      return new root.ActiveXObject(progId);
+      return new root.ActiveXObject(progId!);
     } catch (e) {
       throw new Error('XMLHttpRequest is not supported by your browser');
     }
@@ -65,7 +65,7 @@ export interface AjaxCreationMethod {
   getJSON<T>(url: string, headers?: Object): Observable<T>;
 }
 
-export function ajaxGet(url: string, headers: Object = null) {
+export function ajaxGet(url: string, headers?: object) {
   return new AjaxObservable<AjaxResponse>({ method: 'GET', url, headers });
 }
 
@@ -173,7 +173,7 @@ export class AjaxObservable<T> extends Observable<T> {
     } else {
       for (const prop in urlOrRequest) {
         if (urlOrRequest.hasOwnProperty(prop)) {
-          request[prop] = urlOrRequest[prop];
+          (request as any)[prop] = (urlOrRequest as any)[prop];
         }
       }
     }
@@ -193,6 +193,7 @@ export class AjaxObservable<T> extends Observable<T> {
  * @extends {Ignored}
  */
 export class AjaxSubscriber<T> extends Subscriber<Event> {
+  // @ts-ignore: Property has no initializer and is not definitely assigned
   private xhr: XMLHttpRequest;
   private done: boolean = false;
 
@@ -203,13 +204,13 @@ export class AjaxSubscriber<T> extends Subscriber<Event> {
 
     // force CORS if requested
     if (!request.crossDomain && !this.getHeader(headers, 'X-Requested-With')) {
-      headers['X-Requested-With'] = 'XMLHttpRequest';
+      (headers as any)['X-Requested-With'] = 'XMLHttpRequest';
     }
 
     // ensure content type is set
     let contentTypeHeader = this.getHeader(headers, 'Content-Type');
     if (!contentTypeHeader && !(root.FormData && request.body instanceof root.FormData) && typeof request.body !== 'undefined') {
-      headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
+      (headers as any)['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
     }
 
     // properly serialize body
@@ -236,7 +237,7 @@ export class AjaxSubscriber<T> extends Subscriber<Event> {
       request: { user, method, url, async, password, headers, body }
     } = this;
     try {
-      const xhr = this.xhr = request.createXHR();
+      const xhr = this.xhr = request.createXHR!();
 
       // set up the events before open XHR
       // https://developer.mozilla.org/en/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest
@@ -245,14 +246,14 @@ export class AjaxSubscriber<T> extends Subscriber<Event> {
       this.setupEvents(xhr, request);
       // open XHR
       if (user) {
-        xhr.open(method, url, async, user, password);
+        xhr.open(method!, url!, async!, user, password);
       } else {
-        xhr.open(method, url, async);
+        xhr.open(method!, url!, async!);
       }
 
       // timeout, responseType and withCredentials can be set once the XHR is open
       if (async) {
-        xhr.timeout = request.timeout;
+        xhr.timeout = request.timeout!;
         xhr.responseType = request.responseType as any;
       }
 
@@ -261,7 +262,7 @@ export class AjaxSubscriber<T> extends Subscriber<Event> {
       }
 
       // set headers
-      this.setHeaders(xhr, headers);
+      this.setHeaders(xhr, headers!);
 
       // finally send the request
       if (body) {
@@ -301,7 +302,7 @@ export class AjaxSubscriber<T> extends Subscriber<Event> {
   private setHeaders(xhr: XMLHttpRequest, headers: Object) {
     for (let key in headers) {
       if (headers.hasOwnProperty(key)) {
-        xhr.setRequestHeader(key, headers[key]);
+        xhr.setRequestHeader(key, (headers as any)[key]);
       }
     }
   }
@@ -309,7 +310,7 @@ export class AjaxSubscriber<T> extends Subscriber<Event> {
   private getHeader(headers: {}, headerName: string): any {
     for (let key in headers) {
       if (key.toLowerCase() === headerName.toLowerCase()) {
-        return headers[key];
+        return (headers as any)[key];
       }
     }
 
@@ -444,6 +445,7 @@ export class AjaxResponse {
   response: any;
 
   /** @type {string} The raw responseText */
+  // @ts-ignore: Property has no initializer and is not definitely assigned
   responseText: string;
 
   /** @type {string} The responseType (e.g. 'json', 'arraybuffer', or 'xml') */
@@ -451,7 +453,7 @@ export class AjaxResponse {
 
   constructor(public originalEvent: Event, public xhr: XMLHttpRequest, public request: AjaxRequest) {
     this.status = xhr.status;
-    this.responseType = xhr.responseType || request.responseType;
+    this.responseType = xhr.responseType || request.responseType!;
     this.response = parseXhrResponse(this.responseType, xhr);
   }
 }
@@ -536,11 +538,15 @@ export interface AjaxTimeoutErrorCtor {
   new(xhr: XMLHttpRequest, request: AjaxRequest): AjaxTimeoutError;
 }
 
-function AjaxTimeoutErrorImpl(this: any, xhr: XMLHttpRequest, request: AjaxRequest) {
-  AjaxError.call(this, 'ajax timeout', xhr, request);
-  this.name = 'AjaxTimeoutError';
-  return this;
-}
+const AjaxTimeoutErrorImpl = (() => {
+  function AjaxTimeoutErrorImpl(this: any, xhr: XMLHttpRequest, request: AjaxRequest) {
+    AjaxError.call(this, 'ajax timeout', xhr, request);
+    this.name = 'AjaxTimeoutError';
+    return this;
+  }
+  AjaxTimeoutErrorImpl.prototype = Object.create(AjaxError.prototype);
+  return AjaxTimeoutErrorImpl;
+})();
 
 /**
  * @see {@link ajax}

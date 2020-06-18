@@ -34,9 +34,10 @@ import { MonoTypeOperatorFunction, PartialObserver, SchedulerAction, SchedulerLi
  * ## Example
  * Ensure values in subscribe are called just before browser repaint.
  * ```ts
- * import { interval } from 'rxjs';
+ * import { interval, animationFrameScheduler } from 'rxjs';
  * import { observeOn } from 'rxjs/operators';
  *
+ * const someDiv = document.querySelector("#someDiv");
  * const intervals = interval(10);                // Intervals are scheduled
  *                                                // with async scheduler by default...
  * intervals.pipe(
@@ -54,8 +55,7 @@ import { MonoTypeOperatorFunction, PartialObserver, SchedulerAction, SchedulerLi
  * @return {Observable<T>} Observable that emits the same notifications as the source Observable,
  * but with provided scheduler.
  *
- * @method observeOn
- * @owner Observable
+ * @name observeOn
  */
 export function observeOn<T>(scheduler: SchedulerLike, delay: number = 0): MonoTypeOperatorFunction<T> {
   return function observeOnOperatorFunction(source: Observable<T>): Observable<T> {
@@ -94,7 +94,7 @@ export class ObserveOnSubscriber<T> extends Subscriber<T> {
   private scheduleMessage(notification: Notification<any>): void {
     const destination = this.destination as Subscription;
     destination.add(this.scheduler.schedule(
-      ObserveOnSubscriber.dispatch,
+      ObserveOnSubscriber.dispatch as any,
       this.delay,
       new ObserveOnMessage(notification, this.destination)
     ));

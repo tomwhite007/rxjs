@@ -1,5 +1,4 @@
 import { Observable } from 'rxjs';
-import { TestScheduler } from 'rxjs/testing';
 import { SubscriptionLog } from '../../src/internal/testing/SubscriptionLog';
 import { ColdObservable } from '../../src/internal/testing/ColdObservable';
 import { HotObservable } from '../../src/internal/testing/HotObservable';
@@ -28,7 +27,7 @@ export function cold(marbles: string, values?: any, error?: any): ColdObservable
 }
 
 export function expectObservable(observable: Observable<any>,
-                                 unsubscriptionMarbles: string = null): ({ toBe: observableToBeFn }) {
+                                 unsubscriptionMarbles: string | null = null): ({ toBe: observableToBeFn }) {
   if (!global.rxTestScheduler) {
     throw 'tried to use expectObservable() in async test';
   }

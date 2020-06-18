@@ -65,8 +65,7 @@ export function withLatestFrom<T, R>(array: ObservableInput<any>[], project: (..
  * @return {Observable} An Observable of projected values from the most recent
  * values from each input Observable, or an array of the most recent values from
  * each input Observable.
- * @method withLatestFrom
- * @owner Observable
+ * @name withLatestFrom
  */
 export function withLatestFrom<T, R>(...args: Array<ObservableInput<any> | ((...values: Array<any>) => R)>): OperatorFunction<T, R> {
   return (source: Observable<T>) => {
@@ -146,7 +145,7 @@ class WithLatestFromSubscriber<T, R> extends OuterSubscriber<T, R> {
   private _tryProject(args: any[]) {
     let result: any;
     try {
-      result = this.project.apply(this, args);
+      result = this.project!.apply(this, args);
     } catch (err) {
       this.destination.error(err);
       return;

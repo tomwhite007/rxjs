@@ -1,12 +1,10 @@
-<img src="doc/asset/Rx_Logo_S.png" alt="RxJS Logo" width="86" height="86"> RxJS: Reactive Extensions For JavaScript
-======================================
-
+# <img src="docs_app/assets/Rx_Logo_S.png" alt="RxJS Logo" width="86" height="86"> RxJS: Reactive Extensions For JavaScript
 
 [![CircleCI](https://circleci.com/gh/ReactiveX/rxjs/tree/master.svg?style=svg)](https://circleci.com/gh/ReactiveX/rxjs/tree/master)
-[![npm version](https://badge.fury.io/js/%40reactivex%2Frxjs.svg)](http://badge.fury.io/js/%40reactivex%2Frxjs)
+[![npm version](https://badge.fury.io/js/rxjs.svg)](http://badge.fury.io/js/rxjs)
 [![Join the chat at https://gitter.im/Reactive-Extensions/RxJS](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Reactive-Extensions/RxJS?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-# RxJS 7 (alpha)
+# RxJS 7 (beta)
 
 ### FOR 6.X PLEASE GO TO [THE 6.x BRANCH](https://github.com/ReactiveX/rxjs/tree/6.x)
 
@@ -16,14 +14,15 @@ Reactive Extensions Library for JavaScript. This is a rewrite of [Reactive-Exten
 
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Contribution Guidelines](CONTRIBUTING.md)
-- [Maintainer Guidelines](doc/maintainer-guidelines.md)
-- [Creating Operators](doc/operator-creation.md)
-- [API Documentation (WIP)](https://rxjs.dev/)
+- [Maintainer Guidelines](docs_app/content/maintainer-guidelines.md)
+- [API Documentation](https://rxjs.dev/)
 
 ## Versions In This Repository
 
-- [master](https://github.com/ReactiveX/rxjs/commits/master) - This is all of the current, unreleased work, which is against v6 of RxJS right now
-- [stable](https://github.com/ReactiveX/rxjs/commits/stable) - This is the branch for the latest version you'd get if you do `npm install rxjs`
+- [master](https://github.com/ReactiveX/rxjs/commits/master) - This is all of the current, unreleased work, which is against v7 of RxJS right now
+- [stable](https://github.com/ReactiveX/rxjs/tree/6.x) - This is the branch for the latest version you'd get if you do `npm install rxjs`
+
+Most PRs should be made to **master**.
 
 ## Important
 
@@ -40,13 +39,15 @@ npm install rxjs
 It's recommended to pull in the Observable creation methods you need directly from `'rxjs'` as shown below with `range`. And you can pull in any operator you need from one spot, under `'rxjs/operators'`.
 
 ```ts
-import { range } from 'rxjs';
-import { map, filter } from 'rxjs/operators';
+import { range } from "rxjs";
+import { map, filter } from "rxjs/operators";
 
-range(1, 200).pipe(
-  filter(x => x % 2 === 1),
-  map(x => x + x)
-).subscribe(x => console.log(x));
+range(1, 200)
+  .pipe(
+    filter(x => x % 2 === 1),
+    map(x => x + x)
+  )
+  .subscribe(x => console.log(x));
 ```
 
 ### CDN
@@ -61,10 +62,12 @@ The global namespace for rxjs is `rxjs`:
 const { range } = rxjs;
 const { map, filter } = rxjs.operators;
 
-range(1, 200).pipe(
-  filter(x => x % 2 === 1),
-  map(x => x + x)
-).subscribe(x => console.log(x));
+range(1, 200)
+  .pipe(
+    filter(x => x % 2 === 1),
+    map(x => x + x)
+  )
+  .subscribe(x => console.log(x));
 ```
 
 ## Goals
@@ -88,4 +91,5 @@ Run `npm run build_perf` or `npm run perf` to run the performance tests with `pr
 Run `npm run perf_micro [operator]` to run micro performance test benchmarking operator.
 
 ## Adding documentation
+
 We appreciate all contributions to the documentation of any type. All of the information needed to get the docs app up and running locally as well as how to contribute can be found in the [documentation directory](./docs_app).

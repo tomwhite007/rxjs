@@ -1,6 +1,6 @@
 import { ArgumentOutOfRangeError } from '../util/ArgumentOutOfRangeError';
 import { Observable } from '../Observable';
-import { MonoTypeOperatorFunction, TeardownLogic } from '../types';
+import { MonoTypeOperatorFunction } from '../types';
 import { filter } from './filter';
 import { throwIfEmpty } from './throwIfEmpty';
 import { defaultIfEmpty } from './defaultIfEmpty';
@@ -51,8 +51,7 @@ import { take } from './take';
  * @param {T} [defaultValue] The default value returned for missing indices.
  * @return {Observable} An Observable that emits a single item, if it is found.
  * Otherwise, will emit the default value if given. If not, then emits an error.
- * @method elementAt
- * @owner Observable
+ * @name elementAt
  */
 export function elementAt<T>(index: number, defaultValue?: T): MonoTypeOperatorFunction<T> {
   if (index < 0) { throw new ArgumentOutOfRangeError(); }

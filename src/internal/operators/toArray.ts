@@ -1,7 +1,7 @@
 import { reduce } from './reduce';
 import { OperatorFunction } from '../types';
 
-function toArrayReducer<T>(arr: T[], item: T, index: number) {
+function toArrayReducer<T>(arr: T[], item: T, index: number): T[] {
   if (index === 0) {
     return [item];
   }
@@ -37,8 +37,7 @@ function toArrayReducer<T>(arr: T[], item: T, index: number) {
  *
  * ```
 * @return An array from an observable sequence.
-* @method toArray
-* @owner Observable
+* @name toArray
 */
 export function toArray<T>(): OperatorFunction<T, T[]> {
   return reduce(toArrayReducer, [] as T[]);

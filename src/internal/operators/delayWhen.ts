@@ -51,8 +51,15 @@ export function delayWhen<T>(delayDurationSelector: (value: T, index: number) =>
  * delayedClicks.subscribe(x => console.log(x));
  * ```
  *
- * @see {@link debounce}
  * @see {@link delay}
+ * @see {@link throttle}
+ * @see {@link throttleTime}
+ * @see {@link debounce}
+ * @see {@link debounceTime}
+ * @see {@link sample}
+ * @see {@link sampleTime}
+ * @see {@link audit}
+ * @see {@link auditTime}
  *
  * @param {function(value: T, index: number): Observable} delayDurationSelector A function that
  * returns an Observable for each value emitted by the source Observable, which
@@ -63,8 +70,7 @@ export function delayWhen<T>(delayDurationSelector: (value: T, index: number) =>
  * @return {Observable} An Observable that delays the emissions of the source
  * Observable by an amount of time specified by the Observable returned by
  * `delayDurationSelector`.
- * @method delayWhen
- * @owner Observable
+ * @name delayWhen
  */
 export function delayWhen<T>(delayDurationSelector: (value: T, index: number) => Observable<any>,
                              subscriptionDelay?: Observable<any>): MonoTypeOperatorFunction<T> {

@@ -5,13 +5,32 @@ import { SchedulerAction } from '../types';
 
 export class VirtualTimeScheduler extends AsyncScheduler {
 
-  protected static frameTimeFactor: number = 10;
+  /** @deprecated remove in v8. `frameTimeFactor` is not used in VirtualTimeScheduler directly. */
+  static frameTimeFactor = 10;
 
+  /**
+   * The current frame for the state of the virtual scheduler instance. The the difference
+   * between two "frames" is synonymous with the passage of "virtual time units". So if
+   * you record `scheduler.frame` to be `1`, then later, observe `scheduler.frame` to be at `11`,
+   * that means `10` virtual time units have passed.
+   */
   public frame: number = 0;
+
+  /**
+   * Used internally to examine the current virtual action index being processed.
+   * @deprecated remove in v8. Should be a private API.
+   */
   public index: number = -1;
 
+  /**
+   * This creates an instance of a `VirtualTimeScheduler`. Experts only. The signature of
+   * this constructor is likely to change in the long run.
+   *
+   * @param SchedulerAction The type of Action to initialize when initializing actions during scheduling.
+   * @param maxFrames The maximum number of frames to process before stopping. Used to prevent endless flush cycles.
+   */
   constructor(SchedulerAction: typeof AsyncAction = VirtualAction as any,
-              public maxFrames: number = Number.POSITIVE_INFINITY) {
+              public maxFrames: number = Infinity) {
     super(SchedulerAction, () => this.frame);
   }
 
@@ -23,7 +42,7 @@ export class VirtualTimeScheduler extends AsyncScheduler {
   public flush(): void {
 
     const {actions, maxFrames} = this;
-    let error: any, action: AsyncAction<any>;
+    let error: any, action: AsyncAction<any> | undefined;
 
     while ((action = actions[0]) && action.delay <= maxFrames) {
       actions.shift();
@@ -43,10 +62,6 @@ export class VirtualTimeScheduler extends AsyncScheduler {
   }
 }
 
-/**
- * We need this JSDoc comment for affecting ESDoc.
- * @nodoc
- */
 export class VirtualAction<T> extends AsyncAction<T> {
 
   protected active: boolean = true;

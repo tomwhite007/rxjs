@@ -1,14 +1,11 @@
 import { expect } from 'chai';
-import { defer, Observable, of } from 'rxjs';
+import { defer, of } from 'rxjs';
 import { hot, cold, expectObservable, expectSubscriptions } from '../helpers/marble-testing';
 import { mergeMap } from 'rxjs/operators';
 
-declare function asDiagram(arg: string): Function;
-
 /** @test {defer} */
 describe('defer', () => {
-  asDiagram('defer(() => Observable.of(a, b, c))')
-  ('should defer the creation of a simple Observable', () => {
+  it('should defer the creation of a simple Observable', () => {
     const expected =    '-a--b--c--|';
     const e1 = defer(() => cold('-a--b--c--|'));
     expectObservable(e1).toBe(expected);
@@ -77,13 +74,28 @@ describe('defer', () => {
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
-  it('should create an observable when factory throws', () => {
+  it('should create an observable when factory does not throw', () => {
     const e1 = defer(() => {
-      throw 'error';
+      if (1 !== Infinity) {
+        throw 'error';
+      }
+      return of();
     });
     const expected = '#';
 
     expectObservable(e1).toBe(expected);
+  });
+
+  it('should error when factory throws', (done) => {
+    const e1 = defer(() => {
+      if (1 + 2 === 3) {
+        throw 'error';
+      }
+      return of();
+    });
+    e1.subscribe({
+      error: () => done()
+    });
   });
 
   it('should allow unsubscribing early and explicitly', () => {

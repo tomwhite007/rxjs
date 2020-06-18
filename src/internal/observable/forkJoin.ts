@@ -1,9 +1,8 @@
 import { Observable } from '../Observable';
-import { ObservableInput, ObservedValuesFromArray, ObservedValueOf, SubscribableOrPromise } from '../types';
+import { ObservableInput, ObservedValueUnionFromArray, ObservedValueOf, SubscribableOrPromise } from '../types';
 import { isArray } from '../util/isArray';
 import { map } from '../operators/map';
 import { isObject } from '../util/isObject';
-import { isObservable } from '../util/isObservable';
 import { from } from './from';
 
 /* tslint:disable:max-line-length */
@@ -31,7 +30,7 @@ export function forkJoin<A, B, C>(sources: [ObservableInput<A>, ObservableInput<
 export function forkJoin<A, B, C, D>(sources: [ObservableInput<A>, ObservableInput<B>, ObservableInput<C>, ObservableInput<D>]): Observable<[A, B, C, D]>;
 export function forkJoin<A, B, C, D, E>(sources: [ObservableInput<A>, ObservableInput<B>, ObservableInput<C>, ObservableInput<D>, ObservableInput<E>]): Observable<[A, B, C, D, E]>;
 export function forkJoin<A, B, C, D, E, F>(sources: [ObservableInput<A>, ObservableInput<B>, ObservableInput<C>, ObservableInput<D>, ObservableInput<E>, ObservableInput<F>]): Observable<[A, B, C, D, E, F]>;
-export function forkJoin<A extends ObservableInput<any>[]>(sources: A): Observable<ObservedValuesFromArray<A>[]>;
+export function forkJoin<A extends ObservableInput<any>[]>(sources: A): Observable<ObservedValueUnionFromArray<A>[]>;
 
 // forkJoin({})
 export function forkJoin(sourcesObject: {}): Observable<never>;
@@ -48,45 +47,46 @@ export function forkJoin<T>(...sources: ObservableInput<T>[]): Observable<T[]>;
  * an {@link Observable} that emits either an array of values in the exact same order as the passed array,
  * or a dictionary of values in the same shape as the passed dictionary.
  *
- * <span class="informal">Wait for Observables to complete and then combine last values they emitted.</span>
+ * <span class="informal">Wait for Observables to complete and then combine last values they emitted;
+ * complete immediately if an empty array is passed.</span>
  *
  * ![](forkJoin.png)
  *
  * `forkJoin` is an operator that takes any number of input observables which can be passed either as an array
- * or a dictionary of input observables. If no input observables are provided, resulting stream will complete
- * immediately.
+ * or a dictionary of input observables. If no input observables are provided (e.g. an empty array is passed),
+ * then the resulting stream will complete immediately.
  *
- * `forkJoin` will wait for all passed observables to complete and then it will emit an array or an object with last
+ * `forkJoin` will wait for all passed observables to emit and complete and then it will emit an array or an object with last
  * values from corresponding observables.
  *
- * If you pass an array of `n` observables to the operator, resulting
- * array will have `n` values, where first value is the last thing emitted by the first observable,
- * second value is the last thing emitted by the second observable and so on.
+ * If you pass an array of `n` observables to the operator, then the resulting
+ * array will have `n` values, where the first value is the last one emitted by the first observable,
+ * second value is the last one emitted by the second observable and so on.
  *
- * If you pass a dictionary of observables to the operator, resulting
- * objects will have the same keys as the dictionary passed, with their last values they've emitted
+ * If you pass a dictionary of observables to the operator, then the resulting
+ * objects will have the same keys as the dictionary passed, with their last values they have emitted
  * located at the corresponding key.
  *
  * That means `forkJoin` will not emit more than once and it will complete after that. If you need to emit combined
- * values not only at the end of lifecycle of passed observables, but also throughout it, try out {@link combineLatest}
+ * values not only at the end of the lifecycle of passed observables, but also throughout it, try out {@link combineLatest}
  * or {@link zip} instead.
  *
- * In order for resulting array to have the same length as the number of input observables, whenever any of
- * that observables completes without emitting any value, `forkJoin` will complete at that moment as well
+ * In order for the resulting array to have the same length as the number of input observables, whenever any of
+ * the given observables completes without emitting any value, `forkJoin` will complete at that moment as well
  * and it will not emit anything either, even if it already has some last values from other observables.
- * Conversely, if there is an observable that never completes, `forkJoin` will never complete as well,
- * unless at any point some other observable completes without emitting value, which brings us back to
- * the previous case. Overall, in order for `forkJoin` to emit a value, all observables passed as arguments
+ * Conversely, if there is an observable that never completes, `forkJoin` will never complete either,
+ * unless at any point some other observable completes without emitting a value, which brings us back to
+ * the previous case. Overall, in order for `forkJoin` to emit a value, all given observables
  * have to emit something at least once and complete.
  *
- * If any input observable errors at some point, `forkJoin` will error as well and all other observables
- * will be immediately unsubscribed.
+ * If any given observable errors at some point, `forkJoin` will error as well and immediately unsubscribe
+ * from the other observables.
  *
- * Optionally `forkJoin` accepts project function, that will be called with values which normally
- * would land in emitted array. Whatever is returned by project function, will appear in output
- * observable instead. This means that default project can be thought of as a function that takes
- * all its arguments and puts them into an array. Note that project function will be called only
- * when output observable is supposed to emit a result.
+ * Optionally `forkJoin` accepts a `resultSelector` function, that will be called with values which normally
+ * would land in the emitted array. Whatever is returned by the `resultSelector`, will appear in the output
+ * observable instead. This means that the default `resultSelector` can be thought of as a function that takes
+ * all its arguments and puts them into an array. Note that the `resultSelector` will be called only
+ * when `forkJoin` is supposed to emit a result.
  *
  * ## Examples
  *
@@ -111,7 +111,7 @@ export function forkJoin<T>(...sources: ObservableInput<T>[]): Observable<T[]>;
  *
  * ### Use forkJoin with an array of observable inputs
  * ```ts
- * import { forkJoin, of } from 'rxjs';
+ * import { forkJoin, of, timer } from 'rxjs';
  *
  * const observable = forkJoin([
  *   of(1, 2, 3, 4),
@@ -146,7 +146,6 @@ export function forkJoin(
     if (isArray(first)) {
       return forkJoinInternal(first, null);
     }
-    // TODO(benlesh): isObservable check will not be necessary when deprecated path is removed.
     if (isObject(first) && Object.getPrototypeOf(first) === Object.prototype) {
       const keys = Object.keys(first);
       return forkJoinInternal(keys.map(key => first[key]), keys);
@@ -192,7 +191,7 @@ function forkJoinInternal(sources: ObservableInput<any>[], keys: string[] | null
           if (completed === len || !hasValue) {
             if (emitted === len) {
               subscriber.next(keys ?
-                keys.reduce((result, key, i) => (result[key] = values[i], result), {}) :
+                keys.reduce((result, key, i) => ((result as any)[key] = values[i], result), {}) :
                 values);
             }
             subscriber.complete();

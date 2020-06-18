@@ -125,28 +125,26 @@ export function bindCallback(callbackFunc: Function, scheduler?: SchedulerLike):
  * ```ts
  * import { bindCallback } from 'rxjs';
  *
- * const someFunction = (a, b, c) => {
- *   console.log(a); // 5
- *   console.log(b); // 'some string'
- *   console.log(c); // {someProperty: 'someValue'}
+ * const someFunction = (cb) => {
+ *   cb(5, 'some string', {someProperty: 'someValue'})
  * };
  *
  * const boundSomeFunction = bindCallback(someFunction);
- * boundSomeFunction().subscribe(values => {
- *   console.log(values) // [5, 'some string', {someProperty: 'someValue'}]
+ * boundSomeFunction(12, 10).subscribe(values => {
+ *   console.log(values); // [22, 2]
  * });
  * ```
  *
  * ### Compare behaviour with and without async Scheduler
  * ```ts
- * import { bindCallback } from 'rxjs';
+ * import { bindCallback, asyncScheduler } from 'rxjs';
  *
  * function iCallMyCallbackSynchronously(cb) {
  *   cb();
  * }
  *
  * const boundSyncFn = bindCallback(iCallMyCallbackSynchronously);
- * const boundAsyncFn = bindCallback(iCallMyCallbackSynchronously, null, Rx.Scheduler.async);
+ * const boundAsyncFn = bindCallback(iCallMyCallbackSynchronously, null, asyncScheduler);
  *
  * boundSyncFn().subscribe(() => console.log('I was sync!'));
  * boundAsyncFn().subscribe(() => console.log('I was async!'));
@@ -163,8 +161,9 @@ export function bindCallback(callbackFunc: Function, scheduler?: SchedulerLike):
  * import { bindCallback } from 'rxjs';
  *
  * const boundMethod = bindCallback(someObject.methodWithCallback);
- * boundMethod.call(someObject) // make sure methodWithCallback has access to someObject
- * .subscribe(subscriber);
+ * boundMethod
+ *   .call(someObject) // make sure methodWithCallback has access to someObject
+ *   .subscribe(subscriber);
  * ```
  *
  * @see {@link bindNodeCallback}
@@ -195,20 +194,20 @@ export function bindCallback<T>(
 
   return function (this: any, ...args: any[]): Observable<T> {
     const context = this;
-    let subject: AsyncSubject<T>;
+    let subject: AsyncSubject<T> | undefined;
     const params = {
       context,
-      subject,
+      subject: undefined,
       callbackFunc,
-      scheduler,
+      scheduler: scheduler!,
     };
     return new Observable<T>(subscriber => {
       if (!scheduler) {
         if (!subject) {
           subject = new AsyncSubject<T>();
           const handler = (...innerArgs: any[]) => {
-            subject.next(innerArgs.length <= 1 ? innerArgs[0] : innerArgs);
-            subject.complete();
+            subject!.next(innerArgs.length <= 1 ? innerArgs[0] : innerArgs);
+            subject!.complete();
           };
 
           try {
@@ -226,7 +225,7 @@ export function bindCallback<T>(
         const state: DispatchState<T> = {
           args, subscriber, params,
         };
-        return scheduler.schedule<DispatchState<T>>(dispatch, 0, state);
+        return scheduler.schedule<DispatchState<T>>(dispatch as any, 0, state);
       }
     });
   };
@@ -242,7 +241,7 @@ interface ParamsContext<T> {
   callbackFunc: Function;
   scheduler: SchedulerLike;
   context: any;
-  subject: AsyncSubject<T>;
+  subject?: AsyncSubject<T>;
 }
 
 function dispatch<T>(this: SchedulerAction<DispatchState<T>>, state: DispatchState<T>) {
@@ -255,7 +254,7 @@ function dispatch<T>(this: SchedulerAction<DispatchState<T>>, state: DispatchSta
 
     const handler = (...innerArgs: any[]) => {
       const value = innerArgs.length <= 1 ? innerArgs[0] : innerArgs;
-      this.add(scheduler.schedule<NextState<T>>(dispatchNext, 0, { value, subject }));
+      this.add(scheduler.schedule<NextState<T>>(dispatchNext as any, 0, { value, subject: subject! }));
     };
 
     try {

@@ -43,8 +43,7 @@ import { OperatorFunction } from '../types';
  *
  * @return {Observable<Array<T>>} An Observable of pairs (as arrays) of
  * consecutive values from the source Observable.
- * @method pairwise
- * @owner Observable
+ * @name pairwise
  */
 export function pairwise<T>(): OperatorFunction<T, [T, T]> {
   return (source: Observable<T>) => source.lift(new PairwiseOperator());
@@ -62,7 +61,7 @@ class PairwiseOperator<T> implements Operator<T, [T, T]> {
  * @extends {Ignored}
  */
 class PairwiseSubscriber<T> extends Subscriber<T> {
-  private prev: T;
+  private prev: T | undefined;
   private hasPrev: boolean = false;
 
   constructor(destination: Subscriber<[T, T]>) {
@@ -73,7 +72,7 @@ class PairwiseSubscriber<T> extends Subscriber<T> {
     let pair: [T, T] | undefined;
 
     if (this.hasPrev) {
-      pair = [this.prev, value];
+      pair = [this.prev!, value];
     } else {
       this.hasPrev = true;
     }

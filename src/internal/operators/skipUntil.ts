@@ -43,8 +43,7 @@ import { Subscription } from '../Subscription';
  * be mirrored by the resulting Observable.
  * @return {Observable<T>} An Observable that skips items from the source Observable until the second Observable emits
  * an item, then emits the remaining items.
- * @method skipUntil
- * @owner Observable
+ * @name skipUntil
  */
 export function skipUntil<T>(notifier: Observable<any>): MonoTypeOperatorFunction<T> {
   return (source: Observable<T>) => source.lift(new SkipUntilOperator(notifier));
@@ -67,11 +66,11 @@ class SkipUntilOperator<T> implements Operator<T, T> {
 class SkipUntilSubscriber<T, R> extends OuterSubscriber<T, R> {
 
   private hasValue: boolean = false;
-  private innerSubscription: Subscription;
+  private innerSubscription: Subscription | undefined;
 
   constructor(destination: Subscriber<R>, notifier: ObservableInput<any>) {
     super(destination);
-    const innerSubscriber = new InnerSubscriber(this, undefined, undefined);
+    const innerSubscriber = new InnerSubscriber(this, undefined, undefined!);
     this.add(innerSubscriber);
     this.innerSubscription = innerSubscriber;
     subscribeToResult(this, notifier, undefined, undefined, innerSubscriber);

@@ -14,6 +14,7 @@ export interface RunHelpers {
   cold: typeof TestScheduler.prototype.createColdObservable;
   hot: typeof TestScheduler.prototype.createHotObservable;
   flush: typeof TestScheduler.prototype.flush;
+  time: typeof TestScheduler.prototype.createTime;
   expectObservable: typeof TestScheduler.prototype.expectObservable;
   expectSubscriptions: typeof TestScheduler.prototype.expectSubscriptions;
 }
@@ -28,17 +29,45 @@ export type observableToBeFn = (marbles: string, values?: any, errorValue?: any)
 export type subscriptionLogsToBeFn = (marbles: string | string[]) => void;
 
 export class TestScheduler extends VirtualTimeScheduler {
+  /**
+   * The number of virtual time units each character in a marble diagram represents. If
+   * the test scheduler is being used in "run mode", via the `run` method, this is temporarly
+   * set to `1` for the duration of the `run` block, then set back to whatever value it was.
+   * @nocollapse
+   */
+  static frameTimeFactor = 10;
+
+  /**
+   * @deprecated remove in v8. Not for public use.
+   */
   public readonly hotObservables: HotObservable<any>[] = [];
+
+  /**
+   * @deprecated remove in v8. Not for public use.
+   */
   public readonly coldObservables: ColdObservable<any>[] = [];
+
+  /**
+   * Test meta data to be processed during `flush()`
+   */
   private flushTests: FlushableTest[] = [];
+
+  /**
+   * Indicates whether the TestScheduler instance is operating in "run mode",
+   * meaning it's processing a call to `run()`
+   */
   private runMode = false;
 
+  /**
+   *
+   * @param assertDeepEqual A function to set up your assertion for your test harness
+   */
   constructor(public assertDeepEqual: (actual: any, expected: any) => boolean | void) {
     super(VirtualAction, defaultMaxFrame);
   }
 
   createTime(marbles: string): number {
-    const indexOf: number = marbles.indexOf('|');
+    const indexOf = marbles.trim().indexOf('|');
     if (indexOf === -1) {
       throw new Error('marble diagram for time should have a completion marker "|"');
     }
@@ -92,11 +121,11 @@ export class TestScheduler extends VirtualTimeScheduler {
   }
 
   expectObservable(observable: Observable<any>,
-                   subscriptionMarbles: string = null): ({ toBe: observableToBeFn }) {
+                   subscriptionMarbles: string | null = null): ({ toBe: observableToBeFn }) {
     const actual: TestMessage[] = [];
     const flushTest: FlushableTest = { actual, ready: false };
     const subscriptionParsed = TestScheduler.parseMarblesAsSubscriptions(subscriptionMarbles, this.runMode);
-    const subscriptionFrame = subscriptionParsed.subscribedFrame === Number.POSITIVE_INFINITY ?
+    const subscriptionFrame = subscriptionParsed.subscribedFrame === Infinity ?
       0 : subscriptionParsed.subscribedFrame;
     const unsubscriptionFrame = subscriptionParsed.unsubscribedFrame;
     let subscription: Subscription;
@@ -116,7 +145,7 @@ export class TestScheduler extends VirtualTimeScheduler {
       });
     }, subscriptionFrame);
 
-    if (unsubscriptionFrame !== Number.POSITIVE_INFINITY) {
+    if (unsubscriptionFrame !== Infinity) {
       this.schedule(() => subscription.unsubscribe(), unsubscriptionFrame);
     }
 
@@ -149,7 +178,7 @@ export class TestScheduler extends VirtualTimeScheduler {
   flush() {
     const hotObservables = this.hotObservables;
     while (hotObservables.length > 0) {
-      hotObservables.shift().setup();
+      hotObservables.shift()!.setup();
     }
 
     super.flush();
@@ -164,14 +193,14 @@ export class TestScheduler extends VirtualTimeScheduler {
   }
 
   /** @nocollapse */
-  static parseMarblesAsSubscriptions(marbles: string, runMode = false): SubscriptionLog {
+  static parseMarblesAsSubscriptions(marbles: string | null, runMode = false): SubscriptionLog {
     if (typeof marbles !== 'string') {
-      return new SubscriptionLog(Number.POSITIVE_INFINITY);
+      return new SubscriptionLog(Infinity);
     }
     const len = marbles.length;
     let groupStart = -1;
-    let subscriptionFrame = Number.POSITIVE_INFINITY;
-    let unsubscriptionFrame = Number.POSITIVE_INFINITY;
+    let subscriptionFrame = Infinity;
+    let unsubscriptionFrame = Infinity;
     let frame = 0;
 
     for (let i = 0; i < len; i++) {
@@ -199,7 +228,7 @@ export class TestScheduler extends VirtualTimeScheduler {
           advanceFrameBy(1);
           break;
         case '^':
-          if (subscriptionFrame !== Number.POSITIVE_INFINITY) {
+          if (subscriptionFrame !== Infinity) {
             throw new Error('found a second subscription point \'^\' in a ' +
               'subscription marble diagram. There can only be one.');
           }
@@ -207,7 +236,7 @@ export class TestScheduler extends VirtualTimeScheduler {
           advanceFrameBy(1);
           break;
         case '!':
-          if (unsubscriptionFrame !== Number.POSITIVE_INFINITY) {
+          if (unsubscriptionFrame !== Infinity) {
             throw new Error('found a second subscription point \'^\' in a ' +
               'subscription marble diagram. There can only be one.');
           }
@@ -241,7 +270,7 @@ export class TestScheduler extends VirtualTimeScheduler {
                     break;
                 }
 
-                advanceFrameBy(durationInMs / this.frameTimeFactor);
+                advanceFrameBy(durationInMs! / this.frameTimeFactor);
                 break;
               }
             }
@@ -292,7 +321,7 @@ export class TestScheduler extends VirtualTimeScheduler {
         nextFrame += count * this.frameTimeFactor;
       };
 
-      let notification: Notification<any>;
+      let notification: Notification<any> | undefined;
       const c = marbles[i];
       switch (c) {
         case ' ':
@@ -351,7 +380,7 @@ export class TestScheduler extends VirtualTimeScheduler {
                     break;
                 }
 
-                advanceFrameBy(durationInMs / this.frameTimeFactor);
+                advanceFrameBy(durationInMs! / this.frameTimeFactor);
                 break;
               }
             }
@@ -376,7 +405,7 @@ export class TestScheduler extends VirtualTimeScheduler {
     const prevMaxFrames = this.maxFrames;
 
     TestScheduler.frameTimeFactor = 1;
-    this.maxFrames = Number.POSITIVE_INFINITY;
+    this.maxFrames = Infinity;
     this.runMode = true;
     AsyncScheduler.delegate = this;
 
@@ -384,6 +413,7 @@ export class TestScheduler extends VirtualTimeScheduler {
       cold: this.createColdObservable.bind(this),
       hot: this.createHotObservable.bind(this),
       flush: this.flush.bind(this),
+      time: this.createTime.bind(this),
       expectObservable: this.expectObservable.bind(this),
       expectSubscriptions: this.expectSubscriptions.bind(this),
     };

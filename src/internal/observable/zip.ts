@@ -50,21 +50,23 @@ export function zip<R>(...observables: Array<ObservableInput<any> | ((...values:
  * Otherwise, an array of the input values is returned.
  *
  * ## Example
+ *
  * Combine age and name from different sources
+ *
  * ```ts
  * import { zip, of } from 'rxjs';
  * import { map } from 'rxjs/operators';
  *
- * let age$ = of<number>(27, 25, 29);
- * let name$ = of<string>('Foo', 'Bar', 'Beer');
- * let isDev$ = of<boolean>(true, true, false);
+ * let age$ = of(27, 25, 29);
+ * let name$ = of('Foo', 'Bar', 'Beer');
+ * let isDev$ = of(true, true, false);
  *
  * zip(age$, name$, isDev$).pipe(
- *   map(([age, name, isDev]) => ({ age, name, isDev })),
+ *   map(([age, name, isDev]) => ({ age, name, isDev }))
  * )
  * .subscribe(x => console.log(x));
  *
- * // outputs
+ * // Outputs
  * // { age: 27, name: 'Foo', isDev: true }
  * // { age: 25, name: 'Bar', isDev: true }
  * // { age: 29, name: 'Beer', isDev: false }
@@ -78,16 +80,17 @@ export function zip<R>(...observables: Array<ObservableInput<any> | ((...values:
 export function zip<O extends ObservableInput<any>, R>(
   ...observables: Array<O | ((...values: ObservedValueOf<O>[]) => R)>
 ): Observable<ObservedValueOf<O>[]|R> {
-  const resultSelector = <((...ys: Array<any>) => R)> observables[observables.length - 1];
-  if (typeof resultSelector === 'function') {
-    observables.pop();
+  const last = observables[observables.length - 1];
+  let resultSelector: ((...ys: Array<any>) => R) | undefined = undefined;
+  if (typeof last === 'function') {
+    resultSelector = observables.pop() as typeof resultSelector;
   }
   return fromArray(observables, undefined).lift(new ZipOperator(resultSelector));
 }
 
 export class ZipOperator<T, R> implements Operator<T, R> {
 
-  resultSelector: (...values: Array<any>) => R;
+  resultSelector?: (...values: Array<any>) => R;
 
   constructor(resultSelector?: (...values: Array<any>) => R) {
     this.resultSelector = resultSelector;
@@ -105,7 +108,7 @@ export class ZipOperator<T, R> implements Operator<T, R> {
  */
 export class ZipSubscriber<T, R> extends Subscriber<T> {
   private values: any;
-  private resultSelector: (...values: Array<any>) => R;
+  private resultSelector?: (...values: Array<any>) => R;
   private iterators: LookAheadIterator<any>[] = [];
   private active = 0;
 
@@ -113,7 +116,7 @@ export class ZipSubscriber<T, R> extends Subscriber<T> {
               resultSelector?: (...values: Array<any>) => R,
               values: any = Object.create(null)) {
     super(destination);
-    this.resultSelector = (typeof resultSelector === 'function') ? resultSelector : null;
+    this.resultSelector = resultSelector;
     this.values = values;
   }
 
@@ -205,7 +208,7 @@ export class ZipSubscriber<T, R> extends Subscriber<T> {
   protected _tryresultSelector(args: any[]) {
     let result: any;
     try {
-      result = this.resultSelector.apply(this, args);
+      result = this.resultSelector!.apply(this, args);
     } catch (err) {
       this.destination.error(err);
       return;
@@ -238,7 +241,7 @@ class StaticIterator<T> implements LookAheadIterator<T> {
 
   hasCompleted() {
     const nextResult = this.nextResult;
-    return nextResult && nextResult.done;
+    return nextResult && !!nextResult.done;
   }
 }
 
@@ -296,7 +299,7 @@ class ZipBufferIterator<T, R> extends OuterSubscriber<T, R> implements LookAhead
     if (buffer.length === 0 && this.isComplete) {
       return { value: null, done: true };
     } else {
-      return { value: buffer.shift(), done: false };
+      return { value: buffer.shift()!, done: false };
     }
   }
 

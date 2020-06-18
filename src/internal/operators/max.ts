@@ -28,7 +28,7 @@ import { MonoTypeOperatorFunction } from '../types';
  *   age: number,
  *   name: string
  * }
- * of<Person>(
+ *of(
  *   {age: 7, name: 'Foo'},
  *   {age: 5, name: 'Bar'},
  *   {age: 9, name: 'Beer'},
@@ -43,8 +43,7 @@ import { MonoTypeOperatorFunction } from '../types';
  * @param {Function} [comparer] - Optional comparer function that it will use instead of its default to compare the
  * value of two items.
  * @return {Observable} An Observable that emits item with the largest value.
- * @method max
- * @owner Observable
+ * @name max
  */
 export function max<T>(comparer?: (x: T, y: T) => number): MonoTypeOperatorFunction<T> {
   const max: (x: T, y: T) => T = (typeof comparer === 'function')

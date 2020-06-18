@@ -64,19 +64,18 @@ export function mergeMap<T, R, O extends ObservableInput<any>>(project: (value: 
  * @param {function(value: T, ?index: number): ObservableInput} project A function
  * that, when applied to an item emitted by the source Observable, returns an
  * Observable.
- * @param {number} [concurrent=Number.POSITIVE_INFINITY] Maximum number of input
+ * @param {number} [concurrent=Infinity] Maximum number of input
  * Observables being subscribed to concurrently.
  * @return {Observable} An Observable that emits the result of applying the
  * projection function (and the optional deprecated `resultSelector`) to each item
  * emitted by the source Observable and merging the results of the Observables
  * obtained from this transformation.
- * @method mergeMap
- * @owner Observable
+ * @name mergeMap
  */
 export function mergeMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?: ((outerValue: T, innerValue: ObservedValueOf<O>, outerIndex: number, innerIndex: number) => R) | number,
-  concurrent: number = Number.POSITIVE_INFINITY
+  concurrent: number = Infinity
 ): OperatorFunction<T, ObservedValueOf<O>|R> {
   if (typeof resultSelector === 'function') {
     // DEPRECATED PATH
@@ -93,7 +92,7 @@ export function mergeMap<T, R, O extends ObservableInput<any>>(
 
 export class MergeMapOperator<T, R> implements Operator<T, R> {
   constructor(private project: (value: T, index: number) => ObservableInput<R>,
-              private concurrent: number = Number.POSITIVE_INFINITY) {
+              private concurrent: number = Infinity) {
   }
 
   call(observer: Subscriber<R>, source: any): any {
@@ -116,7 +115,7 @@ export class MergeMapSubscriber<T, R> extends OuterSubscriber<T, R> {
 
   constructor(destination: Subscriber<R>,
               private project: (value: T, index: number) => ObservableInput<R>,
-              private concurrent: number = Number.POSITIVE_INFINITY) {
+              private concurrent: number = Infinity) {
     super(destination);
   }
 
@@ -142,10 +141,10 @@ export class MergeMapSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   private _innerSub(ish: ObservableInput<R>, value: T, index: number): void {
-    const innerSubscriber = new InnerSubscriber(this, undefined, undefined);
+    const innerSubscriber = new InnerSubscriber(this, value, index);
     const destination = this.destination as Subscription;
     destination.add(innerSubscriber);
-    subscribeToResult<T, R>(this, ish, value, index, innerSubscriber);
+    subscribeToResult<T, R>(this, ish, undefined, undefined, innerSubscriber);
   }
 
   protected _complete(): void {
@@ -167,7 +166,7 @@ export class MergeMapSubscriber<T, R> extends OuterSubscriber<T, R> {
     this.remove(innerSub);
     this.active--;
     if (buffer.length > 0) {
-      this._next(buffer.shift());
+      this._next(buffer.shift()!);
     } else if (this.active === 0 && this.hasCompleted) {
       this.destination.complete();
     }

@@ -55,10 +55,9 @@ import { OperatorFunction, TeardownLogic } from '../types';
  * on every other value from the source. A new buffer is started at the
  * beginning of the source by default.
  * @return {Observable<T[]>} An Observable of arrays of buffered values.
- * @method bufferCount
- * @owner Observable
+ * @name bufferCount
  */
-export function bufferCount<T>(bufferSize: number, startBufferEvery: number = null): OperatorFunction<T, T[]> {
+export function bufferCount<T>(bufferSize: number, startBufferEvery: number | null = null): OperatorFunction<T, T[]> {
   return function bufferCountOperatorFunction(source: Observable<T>) {
     return source.lift(new BufferCountOperator<T>(bufferSize, startBufferEvery));
   };
@@ -67,7 +66,7 @@ export function bufferCount<T>(bufferSize: number, startBufferEvery: number = nu
 class BufferCountOperator<T> implements Operator<T, T[]> {
   private subscriberClass: any;
 
-  constructor(private bufferSize: number, private startBufferEvery: number) {
+  constructor(private bufferSize: number, private startBufferEvery: number | null) {
     if (!startBufferEvery || bufferSize === startBufferEvery) {
       this.subscriberClass = BufferCountSubscriber;
     } else {
@@ -147,7 +146,7 @@ class BufferSkipCountSubscriber<T> extends Subscriber<T> {
     const { buffers, destination } = this;
 
     while (buffers.length > 0) {
-      let buffer = buffers.shift();
+      let buffer = buffers.shift()!;
       if (buffer.length > 0) {
         destination.next(buffer);
       }

@@ -26,8 +26,7 @@ import { Observer, OperatorFunction } from '../types';
  * @param {function} predicate A function for determining if an item meets a specified condition.
  * @param {any} [thisArg] Optional object to use for `this` in the callback.
  * @return {Observable} An Observable of booleans that determines if all items of the source Observable meet the condition specified.
- * @method every
- * @owner Observable
+ * @name every
  */
 export function every<T>(predicate: (value: T, index: number, source: Observable<T>) => boolean,
                          thisArg?: any): OperatorFunction<T, boolean> {
@@ -36,8 +35,8 @@ export function every<T>(predicate: (value: T, index: number, source: Observable
 
 class EveryOperator<T> implements Operator<T, boolean> {
   constructor(private predicate: (value: T, index: number, source: Observable<T>) => boolean,
-              private thisArg?: any,
-              private source?: Observable<T>) {
+              private thisArg: any,
+              private source: Observable<T>) {
   }
 
   call(observer: Subscriber<boolean>, source: any): any {
@@ -56,7 +55,7 @@ class EverySubscriber<T> extends Subscriber<T> {
   constructor(destination: Observer<boolean>,
               private predicate: (value: T, index: number, source: Observable<T>) => boolean,
               private thisArg: any,
-              private source?: Observable<T>) {
+              private source: Observable<T>) {
     super(destination);
     this.thisArg = thisArg || this;
   }

@@ -22,10 +22,10 @@ export class Observable<T> implements Subscribable<T> {
   public _isScalar: boolean = false;
 
   /** @deprecated This is an internal implementation detail, do not use. */
-  source: Observable<any>;
+  source: Observable<any> | undefined;
 
   /** @deprecated This is an internal implementation detail, do not use. */
-  operator: Operator<any, T>;
+  operator: Operator<any, T> | undefined;
 
   /**
    * @constructor
@@ -63,7 +63,7 @@ export class Observable<T> implements Subscribable<T> {
    * @param {Operator} operator the operator defining the operation to take on the observable
    * @return {Observable} a new observable with the Operator applied
    */
-  lift<R>(operator: Operator<T, R>): Observable<R> {
+  lift<R>(operator?: Operator<T, R>): Observable<R> {
     const observable = new Observable<R>();
     observable.source = this;
     observable.operator = operator;
@@ -203,9 +203,9 @@ export class Observable<T> implements Subscribable<T> {
    * @return {ISubscription} a subscription reference to the registered handlers
    * @method subscribe
    */
-  subscribe(observerOrNext?: PartialObserver<T> | ((value: T) => void),
-            error?: (error: any) => void,
-            complete?: () => void): Subscription {
+  subscribe(observerOrNext?: PartialObserver<T> | ((value: T) => void) | null,
+            error?: ((error: any) => void) | null,
+            complete?: (() => void) | null): Subscription {
 
     const { operator } = this;
     const sink = toSubscriber(observerOrNext, error, complete);
@@ -250,12 +250,64 @@ export class Observable<T> implements Subscribable<T> {
   }
 
   /**
-   * @method forEach
-   * @param {Function} next a handler for each value emitted by the observable
-   * @param {PromiseConstructor} [promiseCtor] a constructor function used to instantiate the Promise
-   * @return {Promise} a promise that either resolves on observable completion or
+   * Used as a NON-CANCELLABLE means of subscribing to an observable, for use with
+   * APIs that expect promises, like `async/await`. You cannot unsubscribe from this.
+   *
+   * **WARNING**: Only use this with observables you *know* will complete. If the source
+   * observable does not complete, you will end up with a promise that is hung up, and
+   * potentially all of the state of an async function hanging out in memory. To avoid
+   * this situation, look into adding something like {@link timeout}, {@link take},
+   * {@link takeWhile}, or {@link takeUntil} amongst others.
+   *
+   * ### Example:
+   *
+   * ```ts
+   * import { interval } from 'rxjs';
+   * import { take } from 'rxjs/operators';
+   *
+   * const source$ = interval(1000).pipe(take(4));
+   *
+   * async function getTotal() {
+   *    let total = 0;
+   *
+   *    await source$.forEach(value => {
+   *      total += value;
+   *      console.log('observable -> ', value);
+   *    });
+   *
+   *    return total;
+   * }
+   *
+   * getTotal().then(
+   *    total => console.log('Total:', total)
+   * )
+   *
+   * // Expected:
+   * // "observable -> 0"
+   * // "observable -> 1"
+   * // "observable -> 2"
+   * // "observable -> 3"
+   * // "Total: 6"
+   * ```
+   * @param next a handler for each value emitted by the observable
+   * @return a promise that either resolves on observable completion or
    *  rejects with the handled error
    */
+  forEach(next: (value: T) => void): Promise<void>;
+
+  /**
+   * @param next a handler for each value emitted by the observable
+   * @param promiseCtor a constructor function used to instantiate the Promise
+   * @return a promise that either resolves on observable completion or
+   *  rejects with the handled error
+   * @deprecated remove in v8. Passing a Promise constructor will no longer be available
+   * in upcoming versions of RxJS. This is because it adds weight to the library, for very
+   * little benefit. If you need this functionality, it is recommended that you either
+   * polyfill Promise, or you create an adapter to convert the returned native promise
+   * to whatever promise implementation you wanted.
+   */
+  forEach(next: (value: T) => void, promiseCtor: PromiseConstructorLike): Promise<void>;
+
   forEach(next: (value: T) => void, promiseCtor?: PromiseConstructorLike): Promise<void> {
     promiseCtor = getPromiseCtor(promiseCtor);
 
@@ -315,7 +367,7 @@ export class Observable<T> implements Subscribable<T> {
   pipe<A, B, C, D, E, F, G>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>): Observable<G>;
   pipe<A, B, C, D, E, F, G, H>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>, op8: OperatorFunction<G, H>): Observable<H>;
   pipe<A, B, C, D, E, F, G, H, I>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>, op8: OperatorFunction<G, H>, op9: OperatorFunction<H, I>): Observable<I>;
-  pipe<A, B, C, D, E, F, G, H, I>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>, op8: OperatorFunction<G, H>, op9: OperatorFunction<H, I>, ...operations: OperatorFunction<any, any>[]): Observable<{}>;
+  pipe<A, B, C, D, E, F, G, H, I>(op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>, op8: OperatorFunction<G, H>, op9: OperatorFunction<H, I>, ...operations: OperatorFunction<any, any>[]): Observable<unknown>;
   /* tslint:enable:max-line-length */
 
   /**
@@ -347,18 +399,39 @@ export class Observable<T> implements Subscribable<T> {
   }
 
   /* tslint:disable:max-line-length */
-  toPromise<T>(this: Observable<T>): Promise<T>;
-  toPromise<T>(this: Observable<T>, PromiseCtor: typeof Promise): Promise<T>;
-  toPromise<T>(this: Observable<T>, PromiseCtor: PromiseConstructorLike): Promise<T>;
+  /** @deprecated Deprecated use {@link firstValueFrom} or {@link lastValueFrom} instead */
+  toPromise<T>(this: Observable<T>): Promise<T | undefined>;
+  /** @deprecated Deprecated use {@link firstValueFrom} or {@link lastValueFrom} instead */
+  toPromise<T>(this: Observable<T>, PromiseCtor: typeof Promise): Promise<T | undefined>;
+  /** @deprecated Deprecated use {@link firstValueFrom} or {@link lastValueFrom} instead */
+  toPromise<T>(this: Observable<T>, PromiseCtor: PromiseConstructorLike): Promise<T | undefined>;
   /* tslint:enable:max-line-length */
 
-  toPromise(promiseCtor?: PromiseConstructorLike): Promise<T> {
+  /**
+   * Subscribe to this Observable and get a Promise resolving on
+   * `complete` with the last emission (if any).
+   *
+   * **WARNING**: Only use this with observables you *know* will complete. If the source
+   * observable does not complete, you will end up with a promise that is hung up, and
+   * potentially all of the state of an async function hanging out in memory. To avoid
+   * this situation, look into adding something like {@link timeout}, {@link take},
+   * {@link takeWhile}, or {@link takeUntil} amongst others.
+   *
+   * @method toPromise
+   * @param [promiseCtor] a constructor function used to instantiate
+   * the Promise
+   * @return A Promise that resolves with the last value emit, or
+   * rejects on an error. If there were no emissions, Promise
+   * resolves with undefined.
+   * @deprecated Deprecated use {@link firstValueFrom} or {@link lastValueFrom} instead
+   */
+  toPromise(promiseCtor?: PromiseConstructorLike): Promise<T | undefined> {
     promiseCtor = getPromiseCtor(promiseCtor);
 
     return new promiseCtor((resolve, reject) => {
-      let value: any;
+      let value: T | undefined;
       this.subscribe((x: T) => value = x, (err: any) => reject(err), () => resolve(value));
-    }) as Promise<T>;
+    }) as Promise<T | undefined>;
   }
 }
 

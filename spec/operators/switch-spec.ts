@@ -3,12 +3,11 @@ import { hot, cold, expectObservable, expectSubscriptions } from '../helpers/mar
 import { Observable, of, NEVER, queueScheduler, Subject } from 'rxjs';
 import { map, switchAll, mergeMap } from 'rxjs/operators';
 
-declare function asDiagram(arg: string): Function;
 declare const type: Function;
 
 /** @test {switch} */
 describe('switchAll', () => {
-  asDiagram('switchAll')('should switch a hot observable of cold observables', () => {
+  it('should switch a hot observable of cold observables', () => {
     const x = cold(    '--a---b--c---d--|      ');
     const y = cold(           '----e---f--g---|');
     const e1 = hot(  '--x------y-------|       ', { x: x, y: y });
@@ -18,8 +17,8 @@ describe('switchAll', () => {
   });
 
   it('should switch to each immediately-scheduled inner Observable', (done) => {
-    const a = of<number>(1, 2, 3, queueScheduler);
-    const b = of<number>(4, 5, 6, queueScheduler);
+    const a = of(1, 2, 3, queueScheduler);
+    const b = of(4, 5, 6, queueScheduler);
     const r = [1, 4, 5, 6];
     let i = 0;
     of(a, b, queueScheduler)
@@ -192,7 +191,7 @@ describe('switchAll', () => {
   });
 
   it('should handle an observable of promises, where last rejects', (done) => {
-    of<Promise<number>>(Promise.resolve(1), Promise.resolve(2), Promise.reject(3))
+   of(Promise.resolve(1), Promise.resolve(2), Promise.reject(3))
       .pipe(switchAll())
       .subscribe(() => {
         done(new Error('should not be called'));
@@ -208,7 +207,7 @@ describe('switchAll', () => {
     const expected = [1, 2, 3, 4];
     let completed = false;
 
-    of<any>(NEVER, NEVER, [1, 2, 3, 4])
+   of(NEVER, NEVER, [1, 2, 3, 4])
       .pipe(switchAll())
       .subscribe((x) => {
         expect(x).to.equal(expected.shift());

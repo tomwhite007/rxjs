@@ -1,19 +1,17 @@
 import { expect } from 'chai';
 import { expectObservable } from '../helpers/marble-testing';
-import { Observable, fromEvent, NEVER, timer, pipe } from 'rxjs';
+import { Observable, fromEvent, NEVER, timer } from 'rxjs';
 import { NodeStyleEventEmitter, NodeCompatibleEventEmitter, NodeEventHandler } from 'rxjs/internal/observable/fromEvent';
 import { mapTo, take, concat } from 'rxjs/operators';
 import { TestScheduler } from 'rxjs/testing';
 
 declare const type: Function;
 
-declare function asDiagram(arg: string): Function;
 declare const rxTestScheduler: TestScheduler;
 
 /** @test {fromEvent} */
 describe('fromEvent', () => {
-  asDiagram('fromEvent(element, \'click\')')
-  ('should create an observable of click on the element', () => {
+  it('should create an observable of click on the element', () => {
     const target = {
       addEventListener: (eventType: any, listener: any) => {
         timer(50, 20, rxTestScheduler)
@@ -388,7 +386,7 @@ describe('fromEvent', () => {
       on() { /*noop*/ }
       off() { /*noop*/ }
     }
-    NullProtoEventTarget.prototype.toString = null;
+    NullProtoEventTarget.prototype.toString = null!;
     const obj: NullProtoEventTarget = new NullProtoEventTarget();
 
     expect(() => {
@@ -400,14 +398,14 @@ describe('fromEvent', () => {
   type('should support node style event emitters interfaces', () => {
     /* tslint:disable:no-unused-variable */
     let a: NodeStyleEventEmitter;
-    let b: Observable<any> = fromEvent(a, 'mock');
+    let b: Observable<any> = fromEvent(a!, 'mock');
     /* tslint:enable:no-unused-variable */
   });
 
   type('should support node compatible event emitters interfaces', () => {
     /* tslint:disable:no-unused-variable */
     let a: NodeCompatibleEventEmitter;
-    let b: Observable<any> = fromEvent(a, 'mock');
+    let b: Observable<any> = fromEvent(a!, 'mock');
     /* tslint:enable:no-unused-variable */
   });
 
@@ -418,7 +416,7 @@ describe('fromEvent', () => {
       removeListener(eventType: string | symbol, handler: NodeEventHandler): this;
     }
     let a: NodeEventEmitter;
-    let b: Observable<any> = fromEvent(a, 'mock');
+    let b: Observable<any> = fromEvent(a!, 'mock');
     /* tslint:enable:no-unused-variable */
   });
 
@@ -434,7 +432,7 @@ describe('fromEvent', () => {
       removeListener(eventType: string, listener: (...args: any[]) => any): void;
     }
     let a: ReactNativeEventEmitter;
-    let b: Observable<any> = fromEvent(a, 'mock');
+    let b: Observable<any> = fromEvent(a!, 'mock');
     /* tslint:enable:no-unused-variable */
   });
 

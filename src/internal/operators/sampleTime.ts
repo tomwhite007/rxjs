@@ -43,8 +43,7 @@ import { MonoTypeOperatorFunction, SchedulerAction, SchedulerLike, TeardownLogic
  * managing the timers that handle the sampling.
  * @return {Observable<T>} An Observable that emits the results of sampling the
  * values emitted by the source Observable at the specified time interval.
- * @method sampleTime
- * @owner Observable
+ * @name sampleTime
  */
 export function sampleTime<T>(period: number, scheduler: SchedulerLike = async): MonoTypeOperatorFunction<T> {
   return (source: Observable<T>) => source.lift(new SampleTimeOperator(period, scheduler));
@@ -66,7 +65,7 @@ class SampleTimeOperator<T> implements Operator<T, T> {
  * @extends {Ignored}
  */
 class SampleTimeSubscriber<T> extends Subscriber<T> {
-  lastValue: T;
+  lastValue: T | undefined;
   hasValue: boolean = false;
 
   constructor(destination: Subscriber<T>,

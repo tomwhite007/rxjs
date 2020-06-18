@@ -12,7 +12,7 @@ describe('Scheduler.asap', () => {
 
   it('should act like the async scheduler if delay > 0', () => {
     let actionHappened = false;
-    const sandbox = sinon.sandbox.create();
+    const sandbox = sinon.createSandbox();
     const fakeTimer = sandbox.useFakeTimers();
     asap.schedule(() => {
       actionHappened = true;
@@ -27,7 +27,7 @@ describe('Scheduler.asap', () => {
 
   it('should cancel asap actions when delay > 0', () => {
     let actionHappened = false;
-    const sandbox = sinon.sandbox.create();
+    const sandbox = sinon.createSandbox();
     const fakeTimer = sandbox.useFakeTimers();
     asap.schedule(() => {
       actionHappened = true;
@@ -41,7 +41,7 @@ describe('Scheduler.asap', () => {
   });
 
   it('should reuse the interval for recursively scheduled actions with the same delay', () => {
-    const sandbox = sinon.sandbox.create();
+    const sandbox = sinon.createSandbox();
     const fakeTimer = sandbox.useFakeTimers();
     // callThrough is missing from the declarations installed by the typings tool in stable
     const stubSetInterval = (<any> sinon.stub(global, 'setInterval')).callThrough();
@@ -54,7 +54,7 @@ describe('Scheduler.asap', () => {
         this.schedule(state, state.period);
       }
     }
-    asap.schedule(dispatch, period, state);
+    asap.schedule(dispatch as any, period, state);
     expect(state).to.have.property('index', 0);
     expect(stubSetInterval).to.have.property('callCount', 1);
     fakeTimer.tick(period);
@@ -68,7 +68,7 @@ describe('Scheduler.asap', () => {
   });
 
   it('should not reuse the interval for recursively scheduled actions with a different delay', () => {
-    const sandbox = sinon.sandbox.create();
+    const sandbox = sinon.createSandbox();
     const fakeTimer = sandbox.useFakeTimers();
     // callThrough is missing from the declarations installed by the typings tool in stable
     const stubSetInterval = (<any> sinon.stub(global, 'setInterval')).callThrough();
@@ -82,7 +82,7 @@ describe('Scheduler.asap', () => {
         this.schedule(state, state.period);
       }
     }
-    asap.schedule(dispatch, period, state);
+    asap.schedule(dispatch as any, period, state);
     expect(state).to.have.property('index', 0);
     expect(stubSetInterval).to.have.property('callCount', 1);
     fakeTimer.tick(period);
@@ -169,5 +169,33 @@ describe('Scheduler.asap', () => {
     } else {
       firstSubscription.unsubscribe();
     }
+  });
+
+  it('should not execute rescheduled actions when flushing', (done: MochaDone) => {
+    let flushCount = 0;
+    let scheduledIndices: number[] = [];
+
+    let originalFlush = asap.flush;
+    asap.flush = (...args) => {
+      ++flushCount;
+      originalFlush.apply(asap, args);
+      if (flushCount === 2) {
+        asap.flush = originalFlush;
+        try {
+          expect(scheduledIndices).to.deep.equal([0, 1]);
+          done();
+        } catch (error) {
+          done(error);
+        }
+      }
+    };
+
+    asap.schedule(function (index) {
+      if (flushCount < 2) {
+        this.schedule(index! + 1);
+        scheduledIndices.push(index! + 1);
+      }
+    }, 0, 0);
+    scheduledIndices.push(0);
   });
 });

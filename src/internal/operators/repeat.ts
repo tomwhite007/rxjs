@@ -1,7 +1,7 @@
 import { Operator } from '../Operator';
 import { Subscriber } from '../Subscriber';
 import { Observable } from '../Observable';
-import { empty } from '../observable/empty';
+import { EMPTY } from '../observable/empty';
 import { MonoTypeOperatorFunction, TeardownLogic } from '../types';
 
 /**
@@ -57,13 +57,12 @@ import { MonoTypeOperatorFunction, TeardownLogic } from '../types';
  * an empty Observable.
  * @return {Observable} An Observable that will resubscribe to the source stream when the source stream completes
  * , at most count times.
- * @method repeat
- * @owner Observable
+ * @name repeat
  */
 export function repeat<T>(count: number = -1): MonoTypeOperatorFunction<T> {
   return (source: Observable<T>) => {
     if (count === 0) {
-      return empty();
+      return EMPTY;
     } else if (count < 0) {
       return source.lift(new RepeatOperator(-1, source));
     } else {

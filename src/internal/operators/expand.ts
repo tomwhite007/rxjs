@@ -53,21 +53,20 @@ export function expand<T>(project: (value: T, index: number) => ObservableInput<
  * @param {function(value: T, index: number) => Observable} project A function
  * that, when applied to an item emitted by the source or the output Observable,
  * returns an Observable.
- * @param {number} [concurrent=Number.POSITIVE_INFINITY] Maximum number of input
+ * @param {number} [concurrent=Infinity] Maximum number of input
  * Observables being subscribed to concurrently.
  * @param {SchedulerLike} [scheduler=null] The {@link SchedulerLike} to use for subscribing to
  * each projected inner Observable.
  * @return {Observable} An Observable that emits the source values and also
  * result of applying the projection function to each value emitted on the
- * output Observable and and merging the results of the Observables obtained
+ * output Observable and merging the results of the Observables obtained
  * from this transformation.
- * @method expand
- * @owner Observable
+ * @name expand
  */
 export function expand<T, R>(project: (value: T, index: number) => ObservableInput<R>,
-                             concurrent: number = Number.POSITIVE_INFINITY,
-                             scheduler: SchedulerLike = undefined): OperatorFunction<T, R> {
-  concurrent = (concurrent || 0) < 1 ? Number.POSITIVE_INFINITY : concurrent;
+                             concurrent: number = Infinity,
+                             scheduler?: SchedulerLike): OperatorFunction<T, R> {
+  concurrent = (concurrent || 0) < 1 ? Infinity : concurrent;
 
   return (source: Observable<T>) => source.lift(new ExpandOperator(project, concurrent, scheduler));
 }
@@ -75,7 +74,7 @@ export function expand<T, R>(project: (value: T, index: number) => ObservableInp
 export class ExpandOperator<T, R> implements Operator<T, R> {
   constructor(private project: (value: T, index: number) => ObservableInput<R>,
               private concurrent: number,
-              private scheduler: SchedulerLike) {
+              private scheduler?: SchedulerLike) {
   }
 
   call(subscriber: Subscriber<R>, source: any): any {
@@ -99,14 +98,14 @@ export class ExpandSubscriber<T, R> extends OuterSubscriber<T, R> {
   private index: number = 0;
   private active: number = 0;
   private hasCompleted: boolean = false;
-  private buffer: any[];
+  private buffer: any[] | undefined;
 
   constructor(destination: Subscriber<R>,
               private project: (value: T, index: number) => ObservableInput<R>,
               private concurrent: number,
-              private scheduler: SchedulerLike) {
+              private scheduler?: SchedulerLike) {
     super(destination);
-    if (concurrent < Number.POSITIVE_INFINITY) {
+    if (concurrent < Infinity) {
       this.buffer = [];
     }
   }
@@ -128,6 +127,7 @@ export class ExpandSubscriber<T, R> extends OuterSubscriber<T, R> {
     if (this.active < this.concurrent) {
       destination.next(value);
       try {
+        this.active++;
         const { project } = this;
         const result = project(value, index);
         if (!this.scheduler) {
@@ -135,18 +135,21 @@ export class ExpandSubscriber<T, R> extends OuterSubscriber<T, R> {
         } else {
           const state: DispatchArg<T, R> = { subscriber: this, result, value, index };
           const destination = this.destination as Subscription;
-          destination.add(this.scheduler.schedule<DispatchArg<T, R>>(ExpandSubscriber.dispatch, 0, state));
+          destination.add(this.scheduler.schedule<DispatchArg<T, R>>(
+            ExpandSubscriber.dispatch as any,
+            0,
+            state
+          ));
         }
       } catch (e) {
         destination.error(e);
       }
     } else {
-      this.buffer.push(value);
+      this.buffer!.push(value);
     }
   }
 
   private subscribeToProjection(result: any, value: T, index: number): void {
-    this.active++;
     const destination = this.destination as Subscription;
     destination.add(subscribeToResult<T, R>(this, result, value, index));
   }

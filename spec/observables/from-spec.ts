@@ -4,7 +4,6 @@ import { asyncScheduler, of, from, Observable, asapScheduler, Observer, observab
 import { first, concatMap, delay } from 'rxjs/operators';
 
 // tslint:disable:no-any
-declare const asDiagram: any;
 declare const expectObservable: any;
 declare const type: any;
 declare const rxTestScheduler: TestScheduler;
@@ -16,8 +15,7 @@ function getArguments<T>(...args: T[]) {
 
 /** @test {from} */
 describe('from', () => {
-  asDiagram('from([10, 20, 30])')
-  ('should create an observable from an array', () => {
+  it('should create an observable from an array', () => {
     const e1 = from([10, 20, 30]).pipe(
       // for the purpose of making a nice diagram, spread out the synchronous emissions
       concatMap((x, i) => of(x).pipe(
@@ -63,7 +61,7 @@ describe('from', () => {
   });
 
   const fakeArrayObservable = <T>(...values: T[]) => {
-    let arr = ['bad array!'];
+    let arr: any = ['bad array!'];
     arr[observable] = () =>  {
       return {
         subscribe: (observer: Observer<T>) => {
@@ -102,6 +100,34 @@ describe('from', () => {
     { name: 'arguments', value: getArguments('x') },
   ];
 
+  if (Symbol && Symbol.asyncIterator) {
+    const fakeAsyncIterator = (...values: any[]) => {
+      return {
+        [Symbol.asyncIterator]() {
+          let i = 0;
+          return {
+            next() {
+              const index = i++;
+              if (index < values.length) {
+                return Promise.resolve({ done: false, value: values[index] });
+              } else {
+                return Promise.resolve({ done: true });
+              }
+            },
+            [Symbol.asyncIterator]() {
+              return this;
+            }
+          };
+        }
+      };
+    };
+
+    sources.push({
+      name: 'async-iterator',
+      value: fakeAsyncIterator('x')
+    });
+  }
+
   for (const source of sources) {
     it(`should accept ${source.name}`, (done) => {
       let nextInvoked = false;
@@ -139,8 +165,8 @@ describe('from', () => {
       expect(nextInvoked).to.equal(false);
     });
     it(`should accept a function`, (done) => {
-      const subject = new Subject();
-      const handler = (...args: any[]) => subject.next(...args);
+      const subject = new Subject<any>();
+      const handler: any = (arg: any) => subject.next(arg);
       handler[observable] = () => subject;
       let nextInvoked = false;
 

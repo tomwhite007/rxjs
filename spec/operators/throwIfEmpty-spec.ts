@@ -1,14 +1,12 @@
 import { expect } from 'chai';
-import { hot, cold, expectObservable, expectSubscriptions } from '../helpers/marble-testing';
+import { cold, expectObservable, expectSubscriptions } from '../helpers/marble-testing';
 import { EMPTY, of, EmptyError, defer, throwError } from 'rxjs';
 import { throwIfEmpty, mergeMap, retry } from 'rxjs/operators';
-
-declare function asDiagram(arg: string): Function;
 
 /** @test {timeout} */
 describe('throwIfEmpty', () => {
   describe('with errorFactory', () => {
-    asDiagram('throwIfEmpty')('should error when empty', () => {
+    it('should error when empty', () => {
       const source = cold('----|');
       const expected =    '----#';
       expectObservable(

@@ -50,8 +50,7 @@ import { subscribeToResult } from '../util/subscribeToResult';
  * duration, returned as an Observable or a Promise.
  * @return {Observable<T>} An Observable that performs rate-limiting of
  * emissions from the source Observable.
- * @method audit
- * @owner Observable
+ * @name audit
  */
 export function audit<T>(durationSelector: (value: T) => SubscribableOrPromise<any>): MonoTypeOperatorFunction<T> {
   return function auditOperatorFunction(source: Observable<T>) {
@@ -75,9 +74,9 @@ class AuditOperator<T> implements Operator<T, T> {
  */
 class AuditSubscriber<T, R> extends OuterSubscriber<T, R> {
 
-  private value: T;
+  private value: T | null = null;
   private hasValue: boolean = false;
-  private throttled: Subscription;
+  private throttled: Subscription | null = null;
 
   constructor(destination: Subscriber<T>,
               private durationSelector: (value: T) => SubscribableOrPromise<any>) {

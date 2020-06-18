@@ -19,7 +19,7 @@ import { Observer, OperatorFunction } from '../types';
  * up; If any value pair doesn't match, the returned observable will emit `false` and complete. If one of the
  * observables completes, the operator will wait for the other observable to complete; If the other
  * observable emits before completing, the returned observable will emit `false` and complete. If one observable never
- * completes or emits after the other complets, the returned observable will never complete.
+ * completes or emits after the other completes, the returned observable will never complete.
  *
  * ## Example
  * figure out if the Konami code matches
@@ -59,8 +59,7 @@ import { Observer, OperatorFunction } from '../types';
  * @param {function} [comparator] An optional function to compare each value pair
  * @return {Observable} An Observable of a single boolean value representing whether or not
  * the values emitted by both observables were equal in sequence.
- * @method sequenceEqual
- * @owner Observable
+ * @name sequenceEqual
  */
 export function sequenceEqual<T>(compareTo: Observable<T>,
                                  comparator?: (a: T, b: T) => boolean): OperatorFunction<T, boolean> {
@@ -69,7 +68,7 @@ export function sequenceEqual<T>(compareTo: Observable<T>,
 
 export class SequenceEqualOperator<T> implements Operator<T, boolean> {
   constructor(private compareTo: Observable<T>,
-              private comparator: (a: T, b: T) => boolean) {
+              private comparator?: (a: T, b: T) => boolean) {
   }
 
   call(subscriber: Subscriber<boolean>, source: any): any {
@@ -89,7 +88,7 @@ export class SequenceEqualSubscriber<T, R> extends Subscriber<T> {
 
   constructor(destination: Observer<R>,
               private compareTo: Observable<T>,
-              private comparator: (a: T, b: T) => boolean) {
+              private comparator?: (a: T, b: T) => boolean) {
     super(destination);
     (this.destination as Subscription).add(compareTo.subscribe(new SequenceEqualCompareToSubscriber(destination, this)));
   }
@@ -115,8 +114,8 @@ export class SequenceEqualSubscriber<T, R> extends Subscriber<T> {
   checkValues() {
     const { _a, _b, comparator } = this;
     while (_a.length > 0 && _b.length > 0) {
-      let a = _a.shift();
-      let b = _b.shift();
+      let a = _a.shift()!;
+      let b = _b.shift()!;
       let areEqual = false;
       try {
         areEqual = comparator ? comparator(a, b) : a === b;

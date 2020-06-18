@@ -1,24 +1,22 @@
 import { expect } from 'chai';
-import { Observable, forkJoin, of } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 import { lowerCaseO } from '../helpers/test-helper';
-import { hot, expectObservable, expectSubscriptions } from '../helpers/marble-testing';
-import { AssertionError } from 'assert';
+import { hot, expectObservable, expectSubscriptions, cold } from '../helpers/marble-testing';
 
 declare const type: Function;
-declare const asDiagram: Function;
 
 /** @test {forkJoin} */
 describe('forkJoin', () => {
-  asDiagram('forkJoin')
-    ('should join the last values of the provided observables into an array', () => {
-      const e1 = forkJoin(
-                   hot('---a---b---c---d---|'),
-                   hot('-1---2---3---|')
-      );
-      const expected = '-------------------(x|)';
+  it('should join the last values of the provided observables into an array', () => {
+    const e1 = forkJoin([
+        hot('-a--b-----c-d-e-|'),
+        hot('--------f--g-h-i--j-|'),
+      cold('--1--2-3-4---|'),
+    ]);
+    const expected = '--------------------(x|)';
 
-      expectObservable(e1).toBe(expected, {x: ['d', '3']});
-    });
+    expectObservable(e1).toBe(expected, {x: ['e', 'j', '4']});
+  });
 
   it('should support the deprecated resultSelector with an Array of ObservableInputs', () => {
     const results: Array<number|string> = [];

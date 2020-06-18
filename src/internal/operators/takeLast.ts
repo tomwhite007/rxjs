@@ -1,7 +1,7 @@
 import { Operator } from '../Operator';
 import { Subscriber } from '../Subscriber';
 import { ArgumentOutOfRangeError } from '../util/ArgumentOutOfRangeError';
-import { empty } from '../observable/empty';
+import { EMPTY } from '../observable/empty';
 import { Observable } from '../Observable';
 import { MonoTypeOperatorFunction, TeardownLogic } from '../types';
 
@@ -39,18 +39,24 @@ import { MonoTypeOperatorFunction, TeardownLogic } from '../types';
  *
  * @throws {ArgumentOutOfRangeError} When using `takeLast(i)`, it delivers an
  * ArgumentOutOrRangeError to the Observer's `error` callback if `i < 0`.
+ * @throws {TypeError} If the count is not provided or is not a number.
  *
- * @param {number} count The maximum number of values to emit from the end of
+ * @param count The maximum number of values to emit from the end of
  * the sequence of values emitted by the source Observable.
- * @return {Observable<T>} An Observable that emits at most the last count
+ * @return An Observable that emits at most the last count
  * values emitted by the source Observable.
- * @method takeLast
- * @owner Observable
  */
 export function takeLast<T>(count: number): MonoTypeOperatorFunction<T> {
+  if (isNaN(count)) {
+    throw new TypeError(`'count' is not a number`);
+  }
+  if (count < 0) {
+    throw new ArgumentOutOfRangeError;
+  }
+
   return function takeLastOperatorFunction(source: Observable<T>): Observable<T> {
     if (count === 0) {
-      return empty();
+      return EMPTY;
     } else {
       return source.lift(new TakeLastOperator(count));
     }
@@ -59,9 +65,6 @@ export function takeLast<T>(count: number): MonoTypeOperatorFunction<T> {
 
 class TakeLastOperator<T> implements Operator<T, T> {
   constructor(private total: number) {
-    if (this.total < 0) {
-      throw new ArgumentOutOfRangeError;
-    }
   }
 
   call(subscriber: Subscriber<T>, source: any): TeardownLogic {
@@ -69,11 +72,6 @@ class TakeLastOperator<T> implements Operator<T, T> {
   }
 }
 
-/**
- * We need this JSDoc comment for affecting ESDoc.
- * @ignore
- * @extends {Ignored}
- */
 class TakeLastSubscriber<T> extends Subscriber<T> {
   private ring: Array<T> = new Array();
   private count: number = 0;

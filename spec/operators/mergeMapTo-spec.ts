@@ -4,12 +4,10 @@ import { mergeMapTo, map } from 'rxjs/operators';
 import { from, of, Observable } from 'rxjs';
 
 declare const type: Function;
-declare const asDiagram: Function;
 
 /** @test {mergeMapTo} */
 describe('mergeMapTo', () => {
-  asDiagram('mergeMapTo( 10\u2014\u201410\u2014\u201410\u2014| )')
-  ('should map-and-flatten each item to an Observable', () => {
+  it('should map-and-flatten each item to an Observable', () => {
     const e1 =    hot('--1-----3--5-------|');
     const e1subs =    '^                  !';
     const e2 =   cold('x-x-x|              ', {x: 10});
@@ -376,8 +374,8 @@ describe('mergeMapTo', () => {
     let m: Observable<string>;
 
     /* tslint:disable:no-unused-variable */
-    let a1: Observable<string> = o.pipe(mergeMapTo(m));
-    let a2: Observable<string> = o.pipe(mergeMapTo(m, 3));
+    let a1: Observable<string> = o!.pipe(mergeMapTo(m!));
+    let a2: Observable<string> = o!.pipe(mergeMapTo(m!, 3));
     /* tslint:enable:no-unused-variable */
   });
 });

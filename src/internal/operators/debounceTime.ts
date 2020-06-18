@@ -61,8 +61,7 @@ import { MonoTypeOperatorFunction, SchedulerLike, TeardownLogic } from '../types
  * @return {Observable} An Observable that delays the emissions of the source
  * Observable by the specified `dueTime`, and may drop some values if they occur
  * too frequently.
- * @method debounceTime
- * @owner Observable
+ * @name debounceTime
  */
 export function debounceTime<T>(dueTime: number, scheduler: SchedulerLike = async): MonoTypeOperatorFunction<T> {
   return (source: Observable<T>) => source.lift(new DebounceTimeOperator(dueTime, scheduler));
@@ -83,8 +82,8 @@ class DebounceTimeOperator<T> implements Operator<T, T> {
  * @extends {Ignored}
  */
 class DebounceTimeSubscriber<T> extends Subscriber<T> {
-  private debouncedSubscription: Subscription = null;
-  private lastValue: T = null;
+  private debouncedSubscription: Subscription | null = null;
+  private lastValue: T | null = null;
   private hasValue: boolean = false;
 
   constructor(destination: Subscriber<T>,
@@ -97,7 +96,7 @@ class DebounceTimeSubscriber<T> extends Subscriber<T> {
     this.clearDebounce();
     this.lastValue = value;
     this.hasValue = true;
-    this.add(this.debouncedSubscription = this.scheduler.schedule(dispatchNext, this.dueTime, this));
+    this.add(this.debouncedSubscription = this.scheduler.schedule(dispatchNext as any, this.dueTime, this));
   }
 
   protected _complete() {

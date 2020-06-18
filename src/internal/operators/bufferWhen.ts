@@ -46,8 +46,7 @@ import { OperatorFunction } from '../types';
  * @param {function(): Observable} closingSelector A function that takes no
  * arguments and returns an Observable that signals buffer closure.
  * @return {Observable<T[]>} An observable of arrays of buffered values.
- * @method bufferWhen
- * @owner Observable
+ * @name bufferWhen
  */
 export function bufferWhen<T>(closingSelector: () => Observable<any>): OperatorFunction<T, T[]> {
   return function (source: Observable<T>) {
@@ -71,9 +70,9 @@ class BufferWhenOperator<T> implements Operator<T, T[]> {
  * @extends {Ignored}
  */
 class BufferWhenSubscriber<T> extends OuterSubscriber<T, any> {
-  private buffer: T[];
+  private buffer: T[] | undefined;
   private subscribing: boolean = false;
-  private closingSubscription: Subscription;
+  private closingSubscription: Subscription | undefined;
 
   constructor(destination: Subscriber<T[]>, private closingSelector: () => Observable<any>) {
     super(destination);
@@ -81,7 +80,7 @@ class BufferWhenSubscriber<T> extends OuterSubscriber<T, any> {
   }
 
   protected _next(value: T) {
-    this.buffer.push(value);
+    this.buffer!.push(value);
   }
 
   protected _complete() {
@@ -94,7 +93,7 @@ class BufferWhenSubscriber<T> extends OuterSubscriber<T, any> {
 
   /** @deprecated This is an internal implementation detail, do not use. */
   _unsubscribe() {
-    this.buffer = null;
+    this.buffer = null!;
     this.subscribing = false;
   }
 

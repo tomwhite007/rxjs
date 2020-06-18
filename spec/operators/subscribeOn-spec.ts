@@ -3,13 +3,11 @@ import { subscribeOn, mergeMap } from 'rxjs/operators';
 import { TestScheduler } from 'rxjs/testing';
 import { of } from 'rxjs';
 
-declare function asDiagram(arg: string): Function;
-
 declare const rxTestScheduler: TestScheduler;
 
 /** @test {subscribeOn} */
 describe('subscribeOn operator', () => {
-  asDiagram('subscribeOn(scheduler)')('should subscribe on specified scheduler', () => {
+  it('should subscribe on specified scheduler', () => {
     const e1 =   hot('--a--b--|');
     const expected = '--a--b--|';
     const sub =      '^       !';
@@ -80,5 +78,13 @@ describe('subscribeOn operator', () => {
 
     expectObservable(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
+  });
+
+  it('should properly support a delayTime of Infinity', () => {
+    const e1 =   hot('--a--b--|');
+    const expected = '---------';
+
+    expectObservable(e1.pipe(subscribeOn(rxTestScheduler, Infinity))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe([]);
   });
 });

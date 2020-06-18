@@ -59,8 +59,7 @@ export function exhaustMap<T, I, R>(project: (value: T, index: number) => Observ
  * @return {Observable} An Observable containing projected Observables
  * of each item of the source, ignoring projected Observables that start before
  * their preceding Observable has completed.
- * @method exhaustMap
- * @owner Observable
+ * @name exhaustMap
  */
 export function exhaustMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
@@ -122,10 +121,10 @@ class ExhaustMapSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   private _innerSub(result: ObservableInput<R>, value: T, index: number): void {
-    const innerSubscriber = new InnerSubscriber(this, undefined, undefined);
+    const innerSubscriber = new InnerSubscriber(this, value, index);
     const destination = this.destination as Subscription;
     destination.add(innerSubscriber);
-    subscribeToResult<T, R>(this, result, value, index, innerSubscriber);
+    subscribeToResult<T, R>(this, result, undefined, undefined, innerSubscriber);
   }
 
   protected _complete(): void {

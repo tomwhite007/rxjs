@@ -50,8 +50,7 @@ import { OperatorFunction, SubscribableOrPromise } from '../types';
  * which, when it emits, signals that the associated buffer should be emitted
  * and cleared.
  * @return {Observable<T[]>} An observable of arrays of buffered values.
- * @method bufferToggle
- * @owner Observable
+ * @name bufferToggle
  */
 export function bufferToggle<T, O>(
   openings: SubscribableOrPromise<O>,
@@ -104,25 +103,25 @@ class BufferToggleSubscriber<T, O> extends OuterSubscriber<T, O> {
   protected _error(err: any): void {
     const contexts = this.contexts;
     while (contexts.length > 0) {
-      const context = contexts.shift();
+      const context = contexts.shift()!;
       context.subscription.unsubscribe();
-      context.buffer = null;
-      context.subscription = null;
+      context.buffer = null!;
+      context.subscription = null!;
     }
-    this.contexts = null;
+    this.contexts = null!;
     super._error(err);
   }
 
   protected _complete(): void {
     const contexts = this.contexts;
     while (contexts.length > 0) {
-      const context = contexts.shift();
+      const context = contexts.shift()!;
       this.destination.next(context.buffer);
       context.subscription.unsubscribe();
-      context.buffer = null;
-      context.subscription = null;
+      context.buffer = null!;
+      context.subscription = null!;
     }
-    this.contexts = null;
+    this.contexts = null!;
     super._complete();
   }
 

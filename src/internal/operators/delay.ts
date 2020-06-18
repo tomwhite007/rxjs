@@ -54,8 +54,7 @@ import { MonoTypeOperatorFunction, PartialObserver, SchedulerAction, SchedulerLi
  * managing the timers that handle the time-shift for each item.
  * @return {Observable} An Observable that delays the emissions of the source
  * Observable by the specified timeout or Date.
- * @method delay
- * @owner Observable
+ * @name delay
  */
 export function delay<T>(delay: number|Date,
                          scheduler: SchedulerLike = async): MonoTypeOperatorFunction<T> {
@@ -97,12 +96,15 @@ class DelaySubscriber<T> extends Subscriber<T> {
     const destination = state.destination;
 
     while (queue.length > 0 && (queue[0].time - scheduler.now()) <= 0) {
-      queue.shift().notification.observe(destination);
+      queue.shift()!.notification.observe(destination);
     }
 
     if (queue.length > 0) {
       const delay = Math.max(0, queue[0].time - scheduler.now());
       this.schedule(state, delay);
+    } else if (source.isStopped) {
+      source.destination.complete();
+      source.active = false;
     } else {
       this.unsubscribe();
       source.active = false;
@@ -118,7 +120,7 @@ class DelaySubscriber<T> extends Subscriber<T> {
   private _schedule(scheduler: SchedulerLike): void {
     this.active = true;
     const destination = this.destination as Subscription;
-    destination.add(scheduler.schedule<DelayState<T>>(DelaySubscriber.dispatch, this.delay, {
+    destination.add(scheduler.schedule<DelayState<T>>(DelaySubscriber.dispatch as any, this.delay, {
       source: this, destination: this.destination, scheduler: scheduler
     }));
   }
@@ -149,7 +151,9 @@ class DelaySubscriber<T> extends Subscriber<T> {
   }
 
   protected _complete() {
-    this.scheduleNotification(Notification.createComplete());
+    if (this.queue.length === 0) {
+      this.destination.complete();
+    }
     this.unsubscribe();
   }
 }

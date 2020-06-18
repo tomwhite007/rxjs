@@ -8,7 +8,7 @@ const queue = queueScheduler;
 describe('Scheduler.queue', () => {
   it('should act like the async scheduler if delay > 0', () => {
     let actionHappened = false;
-    const sandbox = sinon.sandbox.create();
+    const sandbox = sinon.createSandbox();
     const fakeTimer = sandbox.useFakeTimers();
     queue.schedule(() => {
       actionHappened = true;
@@ -22,14 +22,14 @@ describe('Scheduler.queue', () => {
   });
 
   it('should switch from synchronous to asynchronous at will', () => {
-    const sandbox = sinon.sandbox.create();
+    const sandbox = sinon.createSandbox();
     const fakeTimer = sandbox.useFakeTimers();
 
     let asyncExec = false;
     let state: Array<number> = [];
 
     queue.schedule(function (index) {
-      state.push(index);
+      state.push(index!);
       if (index === 0) {
         this.schedule(1, 100);
       } else if (index === 1) {

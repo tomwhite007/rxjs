@@ -60,7 +60,7 @@ describe('bindCallback', () => {
 
       boundCallback(42)
         .subscribe({
-          next(value) { results.push(value); },
+          next(value: any) { results.push(value); },
           complete() { results.push('done'); },
         });
 
@@ -89,7 +89,7 @@ describe('bindCallback', () => {
         cb(this.datum);
       }
 
-      const boundCallback = bindCallback(callback);
+      const boundCallback = bindCallback<number>(callback);
       const results: Array<string|number> = [];
 
       boundCallback.apply({datum: 5})
@@ -172,7 +172,7 @@ describe('bindCallback', () => {
         cb(this.datum);
       }
 
-      const boundCallback = bindCallback(callback, rxTestScheduler);
+      const boundCallback = bindCallback<number>(callback, rxTestScheduler);
       const results: Array<string|number> = [];
 
       boundCallback.apply({ datum: 5 })

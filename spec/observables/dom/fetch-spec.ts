@@ -9,12 +9,18 @@ const OK_RESPONSE = {
 function mockFetchImpl(input: string | Request, init?: RequestInit): Promise<Response> {
   (mockFetchImpl as MockFetch).calls.push({ input, init });
   return new Promise<any>((resolve, reject) => {
-    if (init.signal) {
-      init.signal.addEventListener('abort', () => {
-        reject(new MockDOMException());
-      });
+    if (init) {
+      if (init.signal) {
+        if (init.signal.aborted) {
+          reject(new MockDOMException());
+          return;
+        }
+        init.signal.addEventListener('abort', () => {
+          reject(new MockDOMException());
+        });
+      }
     }
-    return Promise.resolve(null).then(() => {
+    Promise.resolve(null).then(() => {
       resolve((mockFetchImpl as any).respondWith);
     });
   });
@@ -66,7 +72,7 @@ class MockAbortSignal {
   _signal() {
     this.aborted = true;
     while (this._listeners.length > 0) {
-      this._listeners.shift()();
+      this._listeners.shift()!();
     }
   }
 }
@@ -122,8 +128,8 @@ describe('fromFetch', () => {
           expect(MockAbortController.created).to.equal(1);
           expect(mockFetch.calls.length).to.equal(1);
           expect(mockFetch.calls[0].input).to.equal('/foo');
-          expect(mockFetch.calls[0].init.signal).not.to.be.undefined;
-          expect(mockFetch.calls[0].init.signal.aborted).to.be.false;
+          expect(mockFetch.calls[0].init!.signal).not.to.be.undefined;
+          expect(mockFetch.calls[0].init!.signal!.aborted).to.be.false;
           done();
         }, 0);
       }
@@ -152,8 +158,8 @@ describe('fromFetch', () => {
     expect(MockAbortController.created).to.equal(1);
     expect(mockFetch.calls.length).to.equal(1);
     expect(mockFetch.calls[0].input).to.equal('/foo');
-    expect(mockFetch.calls[0].init.signal).not.to.be.undefined;
-    expect(mockFetch.calls[0].init.signal.aborted).to.be.false;
+    expect(mockFetch.calls[0].init!.signal).not.to.be.undefined;
+    expect(mockFetch.calls[0].init!.signal!.aborted).to.be.false;
   });
 
   it('should abort when unsubscribed', () => {
@@ -165,22 +171,51 @@ describe('fromFetch', () => {
     expect(MockAbortController.created).to.equal(1);
     expect(mockFetch.calls.length).to.equal(1);
     expect(mockFetch.calls[0].input).to.equal('/foo');
-    expect(mockFetch.calls[0].init.signal).not.to.be.undefined;
-    expect(mockFetch.calls[0].init.signal.aborted).to.be.false;
+    expect(mockFetch.calls[0].init!.signal).not.to.be.undefined;
+    expect(mockFetch.calls[0].init!.signal!.aborted).to.be.false;
 
     subscription.unsubscribe();
-    expect(mockFetch.calls[0].init.signal.aborted).to.be.true;
+    expect(mockFetch.calls[0].init!.signal!.aborted).to.be.true;
+  });
+
+  it('should not immediately abort repeat subscribers', () => {
+    const fetch$ = fromFetch('/foo');
+    expect(mockFetch.calls.length).to.equal(0);
+    expect(MockAbortController.created).to.equal(0);
+    let subscription = fetch$.subscribe();
+    expect(MockAbortController.created).to.equal(1);
+    expect(mockFetch.calls[0].init!.signal!.aborted).to.be.false;
+
+    subscription.unsubscribe();
+    expect(mockFetch.calls[0].init!.signal!.aborted).to.be.true;
+
+    subscription = fetch$.subscribe();
+    expect(MockAbortController.created).to.equal(2);
+    expect(mockFetch.calls[1].init!.signal!.aborted).to.be.false;
+
+    subscription.unsubscribe();
+    expect(mockFetch.calls[1].init!.signal!.aborted).to.be.true;
   });
 
   it('should allow passing of init object', done => {
-    const myInit = {};
-    const fetch$ = fromFetch('/foo', myInit);
+    const fetch$ = fromFetch('/foo', {method: 'HEAD'});
     fetch$.subscribe({
       error: done,
       complete: done,
     });
-    expect(mockFetch.calls[0].init).to.equal(myInit);
-    expect(mockFetch.calls[0].init.signal).not.to.be.undefined;
+    expect(mockFetch.calls[0].init!.method).to.equal('HEAD');
+  });
+
+  it('should add a signal to internal init object without mutating the passed init object', done => {
+    const myInit = {method: 'DELETE'};
+    const fetch$ = fromFetch('/bar', myInit);
+    fetch$.subscribe({
+      error: done,
+      complete: done,
+    });
+    expect(mockFetch.calls[0].init!.method).to.equal(myInit.method);
+    expect(mockFetch.calls[0].init).not.to.equal(myInit);
+    expect(mockFetch.calls[0].init!.signal).not.to.be.undefined;
   });
 
   it('should treat passed signals as a cancellation token which triggers an error', done => {
@@ -194,8 +229,92 @@ describe('fromFetch', () => {
       }
     });
     controller.abort();
-    expect(mockFetch.calls[0].init.signal.aborted).to.be.true;
+    expect(mockFetch.calls[0].init!.signal!.aborted).to.be.true;
     // The subscription will not be closed until the error fires when the promise resolves.
     expect(subscription.closed).to.be.false;
+  });
+
+  it('should treat passed already aborted signals as a cancellation token which triggers an error', done => {
+    const controller = new MockAbortController();
+    controller.abort();
+    const signal = controller.signal as any;
+    const fetch$ = fromFetch('/foo', { signal });
+    const subscription = fetch$.subscribe({
+      error: err => {
+        expect(err).to.be.instanceof(MockDOMException);
+        done();
+      }
+    });
+    expect(mockFetch.calls[0].init!.signal!.aborted).to.be.true;
+    // The subscription will not be closed until the error fires when the promise resolves.
+    expect(subscription.closed).to.be.false;
+  });
+
+  it('should not leak listeners added to the passed in signal', done => {
+    const controller = new MockAbortController();
+    const signal = controller.signal as any;
+    const fetch$ = fromFetch('/foo', { signal });
+    const subscription = fetch$.subscribe();
+    subscription.add(() => {
+      try {
+        expect(signal._listeners).to.be.empty;
+        done();
+      } catch (error) {
+        done(error);
+      }
+    });
+  });
+
+  it('should support a selector', done => {
+    mockFetch.respondWith = {
+      ...OK_RESPONSE,
+      text: () => Promise.resolve('bar')
+    };
+    const fetch$ = fromFetch('/foo', {
+      selector: response => response.text()
+    });
+    expect(mockFetch.calls.length).to.equal(0);
+    expect(MockAbortController.created).to.equal(0);
+
+    fetch$.subscribe({
+      next: text => {
+        expect(text).to.equal('bar');
+      },
+      error: done,
+      complete: () => {
+        // Wait until the complete and the subsequent unsubscribe are finished
+        // before testing these expectations:
+        setTimeout(() => {
+          expect(MockAbortController.created).to.equal(1);
+          expect(mockFetch.calls.length).to.equal(1);
+          expect(mockFetch.calls[0].input).to.equal('/foo');
+          expect(mockFetch.calls[0].init!.signal).not.to.be.undefined;
+          expect(mockFetch.calls[0].init!.signal!.aborted).to.be.false;
+          done();
+        }, 0);
+      }
+    });
+  });
+
+  it('should abort when unsubscribed and a selector is specified', () => {
+    mockFetch.respondWith = {
+      ...OK_RESPONSE,
+      text: () => Promise.resolve('bar')
+    };
+    const fetch$ = fromFetch('/foo', {
+      selector: response => response.text()
+    });
+    expect(mockFetch.calls.length).to.equal(0);
+    expect(MockAbortController.created).to.equal(0);
+    const subscription = fetch$.subscribe();
+
+    expect(MockAbortController.created).to.equal(1);
+    expect(mockFetch.calls.length).to.equal(1);
+    expect(mockFetch.calls[0].input).to.equal('/foo');
+    expect(mockFetch.calls[0].init!.signal).not.to.be.undefined;
+    expect(mockFetch.calls[0].init!.signal!.aborted).to.be.false;
+
+    subscription.unsubscribe();
+    expect(mockFetch.calls[0].init!.signal!.aborted).to.be.true;
   });
 });

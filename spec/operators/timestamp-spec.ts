@@ -2,15 +2,12 @@ import { hot, cold, expectObservable, expectSubscriptions } from '../helpers/mar
 import { timestamp, map, mergeMap } from 'rxjs/operators';
 import { TestScheduler } from 'rxjs/testing';
 import { of } from 'rxjs';
-import { Timestamp } from 'rxjs/internal/operators/timestamp';
-
-declare function asDiagram(arg: string): Function;
 
 declare const rxTestScheduler: TestScheduler;
 
 /** @test {timestamp} */
 describe('timestamp operator', () => {
-  asDiagram('timestamp')('should record the time stamp per each source elements', () => {
+  it('should record the time stamp per each source elements', () => {
     const e1 =   hot('-b-c-----d--e--|');
     const e1subs =   '^              !';
     const expected = '-w-x-----y--z--|';
@@ -31,10 +28,10 @@ describe('timestamp operator', () => {
     const expected =    '-w--x----y---z--|';
 
     const expectedValue = {
-      w: new Timestamp('b', 10),
-      x: new Timestamp('c', 40),
-      y: new Timestamp('d', 90),
-      z: new Timestamp('e', 130)
+      w: { value: 'b', timestamp: 10 },
+      x: { value: 'c', timestamp: 40 },
+      y: { value: 'd', timestamp: 90 },
+      z: { value: 'e', timestamp: 130 }
     };
 
     expectObservable(e1.pipe(timestamp(rxTestScheduler))).toBe(expected, expectedValue);
@@ -65,8 +62,8 @@ describe('timestamp operator', () => {
     const expected = '-y--z--';
 
     const expectedValue = {
-      y: new Timestamp('a', 10),
-      z: new Timestamp('b', 40)
+      y: { value: 'a', timestamp: 10 },
+      z: { value: 'b', timestamp: 40 }
     };
 
     expectObservable(e1.pipe(timestamp(rxTestScheduler))).toBe(expected, expectedValue);
@@ -80,8 +77,8 @@ describe('timestamp operator', () => {
     const expected = '-y--z---           ';
 
     const expectedValue = {
-      y: new Timestamp('a', 10),
-      z: new Timestamp('b', 40)
+      y: { value: 'a', timestamp: 10 },
+      z: { value: 'b', timestamp: 40 }
     };
 
     const result = e1.pipe(timestamp(rxTestScheduler));
@@ -97,8 +94,8 @@ describe('timestamp operator', () => {
     const unsub =    '       !           ';
 
     const expectedValue = {
-      y: new Timestamp('a', 10),
-      z: new Timestamp('b', 40)
+      y: { value: 'a', timestamp: 10 },
+      z: { value: 'b', timestamp: 40 }
     };
 
     const result = e1.pipe(
@@ -135,8 +132,8 @@ describe('timestamp operator', () => {
     const expected = '-y--z--#';
 
     const expectedValue = {
-      y: new Timestamp('a', 10),
-      z: new Timestamp('b', 40)
+      y: { value: 'a', timestamp: 10 },
+      z: { value: 'b', timestamp: 40 }
     };
 
     expectObservable(e1.pipe(timestamp(rxTestScheduler))).toBe(expected, expectedValue);

@@ -82,13 +82,12 @@ import { MonoTypeOperatorFunction, SchedulerLike, TeardownLogic } from '../types
  * `trailing` behavior. Defaults to `{ leading: true, trailing: false }`.
  * @return {Observable<T>} An Observable that performs the throttle operation to
  * limit the rate of emissions from the source.
- * @method throttleTime
- * @owner Observable
+ * @name throttleTime
  */
 export function throttleTime<T>(duration: number,
                                 scheduler: SchedulerLike = async,
                                 config: ThrottleConfig = defaultThrottleConfig): MonoTypeOperatorFunction<T> {
-  return (source: Observable<T>) => source.lift(new ThrottleTimeOperator(duration, scheduler, config.leading, config.trailing));
+  return (source: Observable<T>) => source.lift(new ThrottleTimeOperator(duration, scheduler, !!config.leading, !!config.trailing));
 }
 
 class ThrottleTimeOperator<T> implements Operator<T, T> {
@@ -111,9 +110,9 @@ class ThrottleTimeOperator<T> implements Operator<T, T> {
  * @extends {Ignored}
  */
 class ThrottleTimeSubscriber<T> extends Subscriber<T> {
-  private throttled: Subscription;
+  private throttled: Subscription | null = null;
   private _hasTrailingValue: boolean = false;
-  private _trailingValue: T = null;
+  private _trailingValue: T | null = null;
 
   constructor(destination: Subscriber<T>,
               private duration: number,
@@ -130,7 +129,7 @@ class ThrottleTimeSubscriber<T> extends Subscriber<T> {
         this._hasTrailingValue = true;
       }
     } else {
-      this.add(this.throttled = this.scheduler.schedule<DispatchArg<T>>(dispatchNext, this.duration, { subscriber: this }));
+      this.add(this.throttled = this.scheduler.schedule<DispatchArg<T>>(dispatchNext as any, this.duration, { subscriber: this }));
       if (this.leading) {
         this.destination.next(value);
       } else if (this.trailing) {
@@ -159,7 +158,7 @@ class ThrottleTimeSubscriber<T> extends Subscriber<T> {
       }
       throttled.unsubscribe();
       this.remove(throttled);
-      this.throttled = null;
+      this.throttled = null!;
     }
   }
 }

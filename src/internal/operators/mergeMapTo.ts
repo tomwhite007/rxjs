@@ -3,7 +3,7 @@ import { mergeMap } from './mergeMap';
 import { ObservableInput } from '../types';
 
 /* tslint:disable:max-line-length */
-export function mergeMapTo<T, O extends ObservableInput<any>>(innerObservable: O, concurrent?: number): OperatorFunction<any, ObservedValueOf<O>>;
+export function mergeMapTo<O extends ObservableInput<any>>(innerObservable: O, concurrent?: number): OperatorFunction<any, ObservedValueOf<O>>;
 /** @deprecated */
 export function mergeMapTo<T, R, O extends ObservableInput<any>>(innerObservable: O, resultSelector: (outerValue: T, innerValue: ObservedValueOf<O>, outerIndex: number, innerIndex: number) => R, concurrent?: number): OperatorFunction<T, R>;
 /* tslint:enable:max-line-length */
@@ -41,17 +41,16 @@ export function mergeMapTo<T, R, O extends ObservableInput<any>>(innerObservable
  *
  * @param {ObservableInput} innerObservable An Observable to replace each value from
  * the source Observable.
- * @param {number} [concurrent=Number.POSITIVE_INFINITY] Maximum number of input
+ * @param {number} [concurrent=Infinity] Maximum number of input
  * Observables being subscribed to concurrently.
  * @return {Observable} An Observable that emits items from the given
  * `innerObservable`
- * @method mergeMapTo
- * @owner Observable
+ * @name mergeMapTo
  */
 export function mergeMapTo<T, R, O extends ObservableInput<any>>(
   innerObservable: O,
   resultSelector?: ((outerValue: T, innerValue: ObservedValueOf<O>, outerIndex: number, innerIndex: number) => R) | number,
-  concurrent: number = Number.POSITIVE_INFINITY
+  concurrent: number = Infinity
 ): OperatorFunction<T, ObservedValueOf<O>|R> {
   if (typeof resultSelector === 'function') {
     return mergeMap(() => innerObservable, resultSelector, concurrent);

@@ -47,8 +47,7 @@ import { Operator } from '../Operator';
  * previous window and starts a new window.
  * @return {Observable<Observable<T>>} An Observable of windows, which are
  * Observables emitting values of the source Observable.
- * @method window
- * @owner Observable
+ * @name window
  */
 export function window<T>(windowBoundaries: Observable<any>): OperatorFunction<T, Observable<T>> {
   return function windowOperatorFunction(source: Observable<T>) {
@@ -115,7 +114,7 @@ class WindowSubscriber<T> extends OuterSubscriber<T, any> {
 
   /** @deprecated This is an internal implementation detail, do not use. */
   _unsubscribe() {
-    this.window = null;
+    this.window = null!;
   }
 
   private openWindow(): void  {

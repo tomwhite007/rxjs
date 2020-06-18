@@ -8,7 +8,7 @@ Operators are **functions**. There are two kinds of operators:
 
 <span class="informal">A Pipeable Operator is a function that takes an Observable as its input and returns another Observable. It is a pure operation: the previous Observable stays unmodified.</span>
 
-An Pipeable Operator is essentially a pure function which takes one Observable as input and generates another Observable as output. Subscribing to the output Observable will also subscribe to the input Observable.
+A Pipeable Operator is essentially a pure function which takes one Observable as input and generates another Observable as output. Subscribing to the output Observable will also subscribe to the input Observable.
 
 **Creation Operators** are the other kind of operator, which can be called as standalone functions to create a new Observable. For example: `of(1, 2, 3)` creates an observable that will emit 1, 2, and 3, one right after another. Creation operators will be discussed in more detail in a later section.
 
@@ -50,7 +50,7 @@ obs.pipe(
   op1(),
   op2(),
   op3(),
-  op3(),
+  op4()
 )
 ```
 
@@ -69,7 +69,7 @@ import { interval } from 'rxjs';
 const observable = interval(1000 /* number of milliseconds */);
 ```
 
-See the list of [all static creation operators here](#creation-operators).
+See the list of [all static creation operators here](#creation-operators-list).
 
 
 ## Higher-order Observables
@@ -82,7 +82,7 @@ const fileObservable = urlObservable.pipe(
 );
 ```
 
-`http.get()` returns an Observable (of string or string arrays probably) for each individual URL.  Now you have an Observables *of* Observables, a higher-order Observable.
+`http.get()` returns an Observable (of string or string arrays probably) for each individual URL.  Now you have an Observable *of* Observables, a higher-order Observable.
 
 But how do you work with a higher-order Observable? Typically, by _flattening_: by (somehow) converting a higher-order Observable into an ordinary Observable.  For example:
 
@@ -111,7 +111,7 @@ To explain how operators work, textual descriptions are often not enough. Many o
 
 Below you can see the anatomy of a marble diagram.
 
-<img src="assets/images/guide/marble-diagram-anatomy.svg">
+<img src="../src/assets/images/guide/marble-diagram-anatomy.svg">
 
 Throughout this documentation site, we extensively use marble diagrams to explain how operators work. They may be really useful in other contexts too, like on a whiteboard or even in our unit tests (as ASCII diagrams).
 
@@ -121,7 +121,7 @@ There are operators for different purposes, and they may be categorized as: crea
 
 For a complete overview, see the [references page](/api).
 
-### Creation Operators
+### <a id="creation-operators-list"></a>Creation Operators
 
 - [`ajax`](/api/ajax/ajax)
 - [`bindCallback`](/api/index/function/bindCallback)
@@ -139,13 +139,14 @@ For a complete overview, see the [references page](/api).
 - [`timer`](/api/index/function/timer)
 - [`iif`](/api/index/function/iif)
 
-### Join Creation Operators
+### <a id="join-creation-operators"></a>Join Creation Operators
 These are Observable creation operators that also have join functionality -- emitting values of multiple source Observables.
 
 - [`combineLatest`](/api/index/function/combineLatest)
 - [`concat`](/api/index/function/concat)
 - [`forkJoin`](/api/index/function/forkJoin)
 - [`merge`](/api/index/function/merge)
+- [`partition`](/api/index/function/partition)
 - [`race`](/api/index/function/race)
 - [`zip`](/api/index/function/zip)
 
@@ -208,13 +209,14 @@ These are Observable creation operators that also have join functionality -- emi
 - [`throttle`](/api/operators/throttle)
 - [`throttleTime`](/api/operators/throttleTime)
 
-### Join Operators
+### <a id="join-operators"></a>Join Operators
 Also see the [Join Creation Operators](#join-creation-operators) section above.
 
 - [`combineAll`](/api/operators/combineAll)
 - [`concatAll`](/api/operators/concatAll)
 - [`exhaust`](/api/operators/exhaust)
 - [`mergeAll`](/api/operators/mergeAll)
+- [`switchAll`](/api/operators/switchAll)
 - [`startWith`](/api/operators/startWith)
 - [`withLatestFrom`](/api/operators/withLatestFrom)
 
@@ -265,7 +267,7 @@ Also see the [Join Creation Operators](#join-creation-operators) section above.
 
 
 
-## Creating custom observables
+## Creating custom operators
 
 ### Use the `pipe()` function to make new operators
 
@@ -275,7 +277,7 @@ For example, you could make a function that discarded odd values and doubled eve
 
 ```ts
 import { pipe } from 'rxjs';
-import { filter, map } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
 
 function discardOddDoubleEven() {
   return pipe(

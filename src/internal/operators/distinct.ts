@@ -21,19 +21,29 @@ import { MonoTypeOperatorFunction, TeardownLogic } from '../types';
  * that the internal `Set` can be "flushed", basically clearing it of values.
  *
  * ## Examples
+ *
  * A simple example with numbers
+ *
  * ```ts
  * import { of } from 'rxjs';
  * import { distinct } from 'rxjs/operators';
  *
- * of(1, 1, 2, 2, 2, 1, 2, 3, 4, 3, 2, 1).pipe(
- *     distinct(),
+ * of(1, 1, 2, 2, 2, 1, 2, 3, 4, 3, 2, 1)
+ *   .pipe(
+ *     distinct()
  *   )
- *   .subscribe(x => console.log(x)); // 1, 2, 3, 4
+ *   .subscribe(x => console.log(x));
+ *
+ * // Outputs
+ * // 1
+ * // 2
+ * // 3
+ * // 4
  * ```
  *
  * An example using a keySelector function
- * ```typescript
+ *
+ * ```ts
  * import { of } from 'rxjs';
  * import { distinct } from 'rxjs/operators';
  *
@@ -42,16 +52,16 @@ import { MonoTypeOperatorFunction, TeardownLogic } from '../types';
  *    name: string
  * }
  *
- * of<Person>(
+ * of(
  *     { age: 4, name: 'Foo'},
  *     { age: 7, name: 'Bar'},
- *     { age: 5, name: 'Foo'},
+ *     { age: 5, name: 'Foo'}
  *   ).pipe(
- *     distinct((p: Person) => p.name),
+ *     distinct((p: Person) => p.name)
  *   )
  *   .subscribe(x => console.log(x));
  *
- * // displays:
+ * // Outputs
  * // { age: 4, name: 'Foo' }
  * // { age: 7, name: 'Bar' }
  * ```
@@ -61,8 +71,7 @@ import { MonoTypeOperatorFunction, TeardownLogic } from '../types';
  * @param {function} [keySelector] Optional function to select which value you want to check as distinct.
  * @param {Observable} [flushes] Optional Observable for flushing the internal HashSet of the operator.
  * @return {Observable} An Observable that emits items from the source Observable with distinct values.
- * @method distinct
- * @owner Observable
+ * @name distinct
  */
 export function distinct<T, K>(keySelector?: (value: T) => K,
                                flushes?: Observable<any>): MonoTypeOperatorFunction<T> {
@@ -70,7 +79,7 @@ export function distinct<T, K>(keySelector?: (value: T) => K,
 }
 
 class DistinctOperator<T, K> implements Operator<T, T> {
-  constructor(private keySelector: (value: T) => K, private flushes: Observable<any>) {
+  constructor(private keySelector?: (value: T) => K, private flushes?: Observable<any>) {
   }
 
   call(subscriber: Subscriber<T>, source: any): TeardownLogic {
@@ -86,7 +95,7 @@ class DistinctOperator<T, K> implements Operator<T, T> {
 export class DistinctSubscriber<T, K> extends OuterSubscriber<T, T> {
   private values = new Set<K>();
 
-  constructor(destination: Subscriber<T>, private keySelector: (value: T) => K, flushes: Observable<any>) {
+  constructor(destination: Subscriber<T>, private keySelector?: (value: T) => K, flushes?: Observable<any>) {
     super(destination);
 
     if (flushes) {
@@ -116,7 +125,7 @@ export class DistinctSubscriber<T, K> extends OuterSubscriber<T, T> {
     let key: K;
     const { destination } = this;
     try {
-      key = this.keySelector(value);
+      key = this.keySelector!(value);
     } catch (err) {
       destination.error(err);
       return;

@@ -3,11 +3,9 @@ import { hot, cold, expectObservable, expectSubscriptions } from '../helpers/mar
 import { takeWhile, tap, mergeMap } from 'rxjs/operators';
 import { of, Observable, from } from 'rxjs';
 
-declare function asDiagram(arg: string): Function;
-
 /** @test {takeWhile} */
 describe('takeWhile operator', () => {
-  asDiagram('takeWhile(x => x < 4)')('should take all elements until predicate is false', () => {
+  it('should take all elements until predicate is false', () => {
     const source = hot('-1-^2--3--4--5--6--|');
     const sourceSubs =    '^      !         ';
     const expected =      '-2--3--|         ';
@@ -50,7 +48,7 @@ describe('takeWhile operator', () => {
     const e1subs =     '^ !            ';
     const expected =   '--|            ';
 
-    expectObservable(e1.pipe(takeWhile(() => null))).toBe(expected);
+    expectObservable(e1.pipe(takeWhile(() => null as any))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 

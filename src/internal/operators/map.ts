@@ -39,8 +39,7 @@ import { OperatorFunction } from '../types';
  * `project` function.
  * @return {Observable<R>} An Observable that emits the values from the source
  * Observable transformed by the given `project` function.
- * @method map
- * @owner Observable
+ * @name map
  */
 export function map<T, R>(project: (value: T, index: number) => R, thisArg?: any): OperatorFunction<T, R> {
   return function mapOperation(source: Observable<T>): Observable<R> {
@@ -79,7 +78,7 @@ class MapSubscriber<T, R> extends Subscriber<T> {
   // NOTE: This looks unoptimized, but it's actually purposefully NOT
   // using try/catch optimizations.
   protected _next(value: T) {
-    let result: any;
+    let result: R;
     try {
       result = this.project.call(this.thisArg, value, this.count++);
     } catch (err) {

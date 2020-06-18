@@ -1,14 +1,11 @@
 import { expect } from 'chai';
 import { hot, cold, expectObservable, expectSubscriptions } from '../helpers/marble-testing';
-import { scan, mergeMap, finalize, reduce } from 'rxjs/operators';
-import { of, Observable } from 'rxjs';
-
-declare const type: Function;
-declare const asDiagram: Function;
+import { scan, mergeMap, finalize } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 /** @test {scan} */
 describe('scan operator', () => {
-  asDiagram('scan((acc, curr) => acc + curr, 0)')('should scan', () => {
+  it('should scan', () => {
     const values = {
       a: 1, b: 3, c: 5,
       x: 1, y: 4, z: 9
@@ -39,7 +36,7 @@ describe('scan operator', () => {
       z: ['b', 'c', 'd', 'e', 'f', 'g']
     };
 
-    const source = e1.pipe(scan((acc: any, x: string) => [].concat(acc, x), []));
+    const source = e1.pipe(scan((acc, x) => acc.concat(x), [] as string[]));
 
     expectObservable(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -93,7 +90,7 @@ describe('scan operator', () => {
       w: ['b', 'c', 'd']
     };
 
-    const source = e1.pipe(scan((acc: any, x: string) => [].concat(acc, x), []));
+    const source = e1.pipe(scan((acc, x) => acc.concat(x), [] as string[]));
 
     expectObservable(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -113,12 +110,12 @@ describe('scan operator', () => {
       z: ['b', 'c', 'd', 'e', 'f', 'g']
     };
 
-    const source = e1.pipe(scan((acc: any, x: string) => {
+    const source = e1.pipe(scan((acc, x) => {
       if (x === 'd') {
         throw 'bad!';
       }
-      return [].concat(acc, x);
-    }, []));
+      return acc.concat(x);
+    }, [] as string[]));
 
     expectObservable(source).toBe(expected, values, 'bad!');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -129,7 +126,7 @@ describe('scan operator', () => {
     const e1subs =   '(^!)';
     const expected = '|';
 
-    const source = e1.pipe(scan((acc: any, x: string) => [].concat(acc, x), []));
+    const source = e1.pipe(scan((acc, x) => acc.concat(x), [] as string[]));
 
     expectObservable(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -140,7 +137,7 @@ describe('scan operator', () => {
     const e1subs =   '^';
     const expected = '-';
 
-    const source = e1.pipe(scan((acc: any, x: string) => [].concat(acc, x), []));
+    const source = e1.pipe(scan((acc, x) => acc.concat(x), [] as string[]));
 
     expectObservable(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -151,7 +148,7 @@ describe('scan operator', () => {
     const e1subs =   '(^!)';
     const expected = '#';
 
-    const source = e1.pipe(scan((acc: any, x: string) => [].concat(acc, x), []));
+    const source = e1.pipe(scan((acc, x) => acc.concat(x), [] as string[]));
 
     expectObservable(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -171,7 +168,7 @@ describe('scan operator', () => {
       z: ['b', 'c', 'd', 'e', 'f', 'g']
     };
 
-    const source = e1.pipe(scan((acc: any, x: string) => [].concat(acc, x), []));
+    const source = e1.pipe(scan((acc, x) => acc.concat(x), [] as string[]));
 
     expectObservable(source, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -193,7 +190,7 @@ describe('scan operator', () => {
 
     const source = e1.pipe(
       mergeMap((x: string) => of(x)),
-      scan((acc: any, x: string) => [].concat(acc, x), []),
+      scan((acc, x) => acc.concat(x), [] as string[]),
       mergeMap((x: string[]) => of(x))
     );
 
@@ -226,28 +223,5 @@ describe('scan operator', () => {
 
     expectObservable(scanObs).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
-  });
-
-  type('should accept array typed reducers', () => {
-    let a: Observable<{ a: number; b: string }>;
-    a.pipe(scan((acc, value) => acc.concat(value), []));
-  });
-
-  type('should accept T typed reducers', () => {
-    let a: Observable<{ a?: number; b?: string }>;
-    a.pipe(scan((acc, value) => {
-      value.a = acc.a;
-      value.b = acc.b;
-      return acc;
-    }, {} as { a?: number; b?: string }));
-  });
-
-  type('should accept R typed reducers', () => {
-    let a: Observable<{ a: number; b: string }>;
-    a.pipe(scan<{ a?: number; b?: string }>((acc, value) => {
-      value.a = acc.a;
-      value.b = acc.b;
-      return acc;
-    }, {}));
   });
 });

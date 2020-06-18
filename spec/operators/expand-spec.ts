@@ -1,18 +1,16 @@
 import { expect } from 'chai';
-import { expand, mergeMap, map } from 'rxjs/operators';
+import { expand, mergeMap, map, take, toArray } from 'rxjs/operators';
 import { TestScheduler } from 'rxjs/testing';
 import { hot, cold, expectObservable, expectSubscriptions } from '../helpers/marble-testing';
-import { Subscribable, EMPTY, Observable, of, Observer } from 'rxjs';
+import { Subscribable, EMPTY, Observable, of, Observer, asapScheduler, asyncScheduler } from 'rxjs';
 
-declare function asDiagram(arg: string): Function;
 declare const type: Function;
 
 declare const rxTestScheduler: TestScheduler;
 
 /** @test {expand} */
 describe('expand operator', () => {
-  asDiagram('expand(x => x === 8 ? empty : \u2014\u20142*x\u2014| )')
-  ('should recursively map-and-flatten each item to an Observable', () => {
+  it('should recursively map-and-flatten each item to an Observable', () => {
     const e1 =    hot('--x----|  ', {x: 1});
     const e1subs =    '^      !  ';
     const e2 =   cold(  '--c|    ', {c: 2});
@@ -32,7 +30,7 @@ describe('expand operator', () => {
     const expected =  '--a-b-c-d|';
     const values = {a: 1, b: 2, c: 4, d: 8};
 
-    const result = e1.pipe(expand(x => x === 8 ? EMPTY : e2.pipe(map(c => c * x)), Number.POSITIVE_INFINITY, rxTestScheduler));
+    const result = e1.pipe(expand(x => x === 8 ? EMPTY : e2.pipe(map(c => c * x)), Infinity, rxTestScheduler));
 
     expectObservable(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -368,7 +366,7 @@ describe('expand operator', () => {
         return <any>EMPTY;
       }
 
-      const ish = {
+      const ish: any = {
         subscribe: (observer: Observer<number>) => {
           observer.next(x + x);
           observer.complete();
@@ -415,5 +413,29 @@ describe('expand operator', () => {
 
     expectObservable(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should work with the AsapScheduler', (done) => {
+    const expected = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    of(0).pipe(
+      expand((x) => of(x + 1), Infinity, asapScheduler),
+      take(10),
+      toArray()
+    ).subscribe(
+      (actual) => expect(actual).to.deep.equal(expected),
+      done, done
+    );
+  });
+
+  it('should work with the AsyncScheduler', (done) => {
+    const expected = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    of(0).pipe(
+      expand((x) => of(x + 1), Infinity, asyncScheduler),
+      take(10),
+      toArray()
+    ).subscribe(
+      (actual) => expect(actual).to.deep.equal(expected),
+      done, done
+    );
   });
 });

@@ -76,8 +76,7 @@ export function switchMap<T, R, O extends ObservableInput<any>>(project: (value:
  * projection function (and the optional deprecated `resultSelector`) to each item
  * emitted by the source Observable and taking only the values from the most recently
  * projected inner Observable.
- * @method switchMap
- * @owner Observable
+ * @name switchMap
  */
 export function switchMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
@@ -109,7 +108,7 @@ class SwitchMapOperator<T, R> implements Operator<T, R> {
  */
 class SwitchMapSubscriber<T, R> extends OuterSubscriber<T, R> {
   private index: number = 0;
-  private innerSubscription: Subscription;
+  private innerSubscription: Subscription | null | undefined;
 
   constructor(destination: Subscriber<R>,
               private project: (value: T, index: number) => ObservableInput<R>) {
@@ -133,10 +132,10 @@ class SwitchMapSubscriber<T, R> extends OuterSubscriber<T, R> {
     if (innerSubscription) {
       innerSubscription.unsubscribe();
     }
-    const innerSubscriber = new InnerSubscriber(this, undefined, undefined);
+    const innerSubscriber = new InnerSubscriber(this, value, index);
     const destination = this.destination as Subscription;
     destination.add(innerSubscriber);
-    this.innerSubscription = subscribeToResult(this, result, value, index, innerSubscriber);
+    this.innerSubscription = subscribeToResult(this, result, undefined, undefined, innerSubscriber);
   }
 
   protected _complete(): void {
@@ -148,13 +147,13 @@ class SwitchMapSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   protected _unsubscribe() {
-    this.innerSubscription = null;
+    this.innerSubscription = null!;
   }
 
   notifyComplete(innerSub: Subscription): void {
     const destination = this.destination as Subscription;
     destination.remove(innerSub);
-    this.innerSubscription = null;
+    this.innerSubscription = null!;
     if (this.isStopped) {
       super._complete();
     }

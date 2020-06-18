@@ -41,7 +41,7 @@ export const defaultThrottleConfig: ThrottleConfig = {
  * ## Example
  * Emit clicks at a rate of at most one click per second
  * ```ts
- * import { fromEvent } from 'rxjs';
+ * import { fromEvent, interval } from 'rxjs';
  * import { throttle } from 'rxjs/operators';
  *
  * const clicks = fromEvent(document, 'click');
@@ -62,12 +62,11 @@ export const defaultThrottleConfig: ThrottleConfig = {
  * to `{ leading: true, trailing: false }`.
  * @return {Observable<T>} An Observable that performs the throttle operation to
  * limit the rate of emissions from the source.
- * @method throttle
- * @owner Observable
+ * @name throttle
  */
 export function throttle<T>(durationSelector: (value: T) => SubscribableOrPromise<any>,
                             config: ThrottleConfig = defaultThrottleConfig): MonoTypeOperatorFunction<T> {
-  return (source: Observable<T>) => source.lift(new ThrottleOperator(durationSelector, config.leading, config.trailing));
+  return (source: Observable<T>) => source.lift(new ThrottleOperator(durationSelector, !!config.leading, !!config.trailing));
 }
 
 class ThrottleOperator<T> implements Operator<T, T> {
@@ -89,8 +88,8 @@ class ThrottleOperator<T> implements Operator<T, T> {
  * @extends {Ignored}
  */
 class ThrottleSubscriber<T, R> extends OuterSubscriber<T, R> {
-  private _throttled: Subscription;
-  private _sendValue: T;
+  private _throttled: Subscription | null | undefined;
+  private _sendValue: T | null = null;
   private _hasValue = false;
 
   constructor(protected destination: Subscriber<T>,
@@ -116,8 +115,8 @@ class ThrottleSubscriber<T, R> extends OuterSubscriber<T, R> {
   private send() {
     const { _hasValue, _sendValue } = this;
     if (_hasValue) {
-      this.destination.next(_sendValue);
-      this.throttle(_sendValue);
+      this.destination.next(_sendValue!);
+      this.throttle(_sendValue!);
     }
     this._hasValue = false;
     this._sendValue = null;
@@ -130,7 +129,7 @@ class ThrottleSubscriber<T, R> extends OuterSubscriber<T, R> {
     }
   }
 
-  private tryDurationSelector(value: T): SubscribableOrPromise<any> {
+  private tryDurationSelector(value: T): SubscribableOrPromise<any> | null {
     try {
       return this.durationSelector(value);
     } catch (err) {

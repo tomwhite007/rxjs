@@ -4,6 +4,7 @@ export { ConnectableObservable } from './internal/observable/ConnectableObservab
 export { GroupedObservable } from './internal/operators/groupBy';
 export { Operator } from './internal/Operator';
 export { observable } from './internal/symbol/observable';
+export { animationFrames } from './internal/observable/dom/animationFrames';
 
 /* Subjects */
 export { Subject } from './internal/Subject';
@@ -32,12 +33,18 @@ export { noop } from './internal/util/noop';
 export { identity } from './internal/util/identity';
 export { isObservable } from './internal/util/isObservable';
 
+/* Promise Conversion */
+export { lastValueFrom } from './internal/lastValueFrom';
+export { firstValueFrom } from './internal/firstValueFrom';
+
 /* Error types */
 export { ArgumentOutOfRangeError } from './internal/util/ArgumentOutOfRangeError';
 export { EmptyError } from './internal/util/EmptyError';
+export { NotFoundError } from './internal/util/NotFoundError';
 export { ObjectUnsubscribedError } from './internal/util/ObjectUnsubscribedError';
-export { UnsubscriptionError } from './internal/util/UnsubscriptionError';
+export { SequenceError } from './internal/util/SequenceError';
 export { TimeoutError } from './internal/util/TimeoutError';
+export { UnsubscriptionError } from './internal/util/UnsubscriptionError';
 
 /* Static observable creation exports */
 export { bindCallback } from './internal/observable/bindCallback';

@@ -17,13 +17,13 @@ export function scheduleIterable<T>(input: Iterable<T>, scheduler: SchedulerLike
       }
     });
     sub.add(scheduler.schedule(() => {
-      iterator = input[Symbol_iterator]();
+      iterator = (input as any)[Symbol_iterator]();
       sub.add(scheduler.schedule(function () {
         if (subscriber.closed) {
           return;
         }
         let value: T;
-        let done: boolean;
+        let done: boolean | undefined;
         try {
           const result = iterator.next();
           value = result.value;

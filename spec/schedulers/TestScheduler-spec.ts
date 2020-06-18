@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { hot, cold, expectObservable, expectSubscriptions, time } from '../helpers/marble-testing';
 import { AsyncScheduler } from 'rxjs/internal/scheduler/AsyncScheduler';
 import { TestScheduler } from 'rxjs/testing';
-import { Observable, NEVER, EMPTY, Subject, of, concat, merge, Notification } from 'rxjs';
+import { Observable, NEVER, EMPTY, Subject, of, merge, Notification } from 'rxjs';
 import { delay, debounceTime, concatMap } from 'rxjs/operators';
 
 declare const rxTestScheduler: TestScheduler;
@@ -12,6 +12,10 @@ describe('TestScheduler', () => {
   it('should exist', () => {
     expect(TestScheduler).exist;
     expect(TestScheduler).to.be.a('function');
+  });
+
+  it('should have frameTimeFactor set initially', () => {
+    expect(TestScheduler.frameTimeFactor).to.equal(10);
   });
 
   describe('parseMarbles()', () => {
@@ -102,7 +106,7 @@ describe('TestScheduler', () => {
     it('should parse a subscription marble string with an unsubscription', () => {
       const result = TestScheduler.parseMarblesAsSubscriptions('---^-');
       expect(result.subscribedFrame).to.equal(30);
-      expect(result.unsubscribedFrame).to.equal(Number.POSITIVE_INFINITY);
+      expect(result.unsubscribedFrame).to.equal(Infinity);
     });
 
     it('should parse a subscription marble string with a synchronous unsubscription', () => {
@@ -128,13 +132,13 @@ describe('TestScheduler', () => {
 
   describe('createTime()', () => {
     it('should parse a simple time marble string to a number', () => {
-      const scheduler = new TestScheduler(null);
+      const scheduler = new TestScheduler(null!);
       const time = scheduler.createTime('-----|');
       expect(time).to.equal(50);
     });
 
     it('should throw if not given good marble input', () => {
-      const scheduler = new TestScheduler(null);
+      const scheduler = new TestScheduler(null!);
       expect(() => {
         scheduler.createTime('-a-b-#');
       }).to.throw();
@@ -144,7 +148,7 @@ describe('TestScheduler', () => {
   describe('createColdObservable()', () => {
     it('should create a cold observable', () => {
       const expected = ['A', 'B'];
-      const scheduler = new TestScheduler(null);
+      const scheduler = new TestScheduler(null!);
       const source = scheduler.createColdObservable('--a---b--|', { a: 'A', b: 'B' });
       expect(source).to.be.an.instanceOf(Observable);
       source.subscribe(x => {
@@ -158,7 +162,7 @@ describe('TestScheduler', () => {
   describe('createHotObservable()', () => {
     it('should create a hot observable', () => {
       const expected = ['A', 'B'];
-      const scheduler = new TestScheduler(null);
+      const scheduler = new TestScheduler(null!);
       const source = scheduler.createHotObservable('--a---b--|', { a: 'A', b: 'B' });
       expect(source).to.be.an.instanceof(Subject);
       source.subscribe(x => {
@@ -376,7 +380,7 @@ describe('TestScheduler', () => {
         const output = cold('-a|').pipe(
           delay(1000 * 10)
         );
-        const expected = '   - 10s a|';
+        const expected = '   - 10s (a|)';
         expectObservable(output).toBe(expected);
       });
     });

@@ -40,15 +40,14 @@ import { ObservableInput, OperatorFunction } from '../types';
  * @param {function(acc: R, value: T): Observable<R>} accumulator
  * The accumulator function called on each source value.
  * @param seed The initial accumulation value.
- * @param {number} [concurrent=Number.POSITIVE_INFINITY] Maximum number of
+ * @param {number} [concurrent=Infinity] Maximum number of
  * input Observables being subscribed to concurrently.
  * @return {Observable<R>} An observable of the accumulated values.
- * @method mergeScan
- * @owner Observable
+ * @name mergeScan
  */
 export function mergeScan<T, R>(accumulator: (acc: R, value: T, index: number) => ObservableInput<R>,
                                 seed: R,
-                                concurrent: number = Number.POSITIVE_INFINITY): OperatorFunction<T, R> {
+                                concurrent: number = Infinity): OperatorFunction<T, R> {
   return (source: Observable<T>) => source.lift(new MergeScanOperator(accumulator, seed, concurrent));
 }
 
@@ -103,10 +102,10 @@ export class MergeScanSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   private _innerSub(ish: any, value: T, index: number): void {
-    const innerSubscriber = new InnerSubscriber(this, undefined, undefined);
+    const innerSubscriber = new InnerSubscriber(this, value, index);
     const destination = this.destination as Subscription;
     destination.add(innerSubscriber);
-    subscribeToResult<T, R>(this, ish, value, index, innerSubscriber);
+    subscribeToResult<T, R>(this, ish, undefined, undefined, innerSubscriber);
   }
 
   protected _complete(): void {

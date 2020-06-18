@@ -20,12 +20,12 @@ import { map } from './map';
  * ![](timeinterval.png)
  *
  * ## Examples
- * Emit inteval between current value with the last value
+ * Emit interval between current value with the last value
  *
  * ```ts
  * const seconds = interval(1000);
  *
- * seconds.pipe(timeinterval())
+ * seconds.pipe(timeInterval())
  * .subscribe(
  *     value => console.log(value),
  *     err => console.log(err),
@@ -48,7 +48,7 @@ import { map } from './map';
  *
  * @param {SchedulerLike} [scheduler] Scheduler used to get the current time.
  * @return {Observable<{ interval: number, value: T }>} Observable that emit infomation about value and interval
- * @method timeInterval
+ * @name timeInterval
  */
 export function timeInterval<T>(scheduler: SchedulerLike = async): OperatorFunction<T, TimeInterval<T>> {
   return (source: Observable<T>) => defer(() => {
@@ -56,8 +56,8 @@ export function timeInterval<T>(scheduler: SchedulerLike = async): OperatorFunct
       // TODO(benlesh): correct these typings.
       scan(
         ({ current }, value) => ({ value, current: scheduler.now(), last: current }),
-        { current: scheduler.now(), value: undefined,  last: undefined }
-      ) as any,
+        { current: scheduler.now(), value: undefined,  last: undefined } as any
+      ) as OperatorFunction<T, any>,
       map<any, TimeInterval<T>>(({ current, last, value }) => new TimeInterval(value, current - last)),
     );
   });

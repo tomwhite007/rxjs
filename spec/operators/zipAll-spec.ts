@@ -3,12 +3,11 @@ import { hot, cold, expectObservable, expectSubscriptions } from '../helpers/mar
 import { zipAll, mergeMap } from 'rxjs/operators';
 import { queueScheduler, of, zip, Observable } from 'rxjs';
 
-declare function asDiagram(arg: string): Function;
 declare const type: Function;
 
 /** @test {zipAll} */
 describe('zipAll operator', () => {
-  asDiagram('zipAll')('should combine paired events from two observables', () => {
+  it('should combine paired events from two observables', () => {
     const x =    cold(               '-a-----b-|');
     const y =    cold(               '--1-2-----');
     const outer = hot('-x----y--------|         ', { x: x, y: y });
@@ -571,7 +570,7 @@ describe('zipAll operator', () => {
   it('should work with empty and error', () => {
     const a = cold(  '|');
     const asubs =    '(^!)';
-    const b = hot(   '------#', null, 'too bad');
+    const b = hot(   '------#', undefined, 'too bad');
     const bsubs =    '(^!)';
     const expected = '|';
 
@@ -581,7 +580,7 @@ describe('zipAll operator', () => {
   });
 
   it('should work with error and empty', () => {
-    const a = hot(   '------#', null, 'too bad');
+    const a = hot(   '------#', undefined, 'too bad');
     const asubs =    '(^!)';
     const b = cold(  '|');
     const bsubs =    '(^!)';
@@ -629,9 +628,9 @@ describe('zipAll operator', () => {
   });
 
   it('should work with error and error', () => {
-    const a =    hot('------#', null, 'too bad');
+    const a =    hot('------#', undefined, 'too bad');
     const asubs =    '^     !';
-    const b =    hot('----------#', null, 'too bad 2');
+    const b =    hot('----------#', undefined, 'too bad 2');
     const bsubs =    '^     !';
     const expected = '------#';
 
